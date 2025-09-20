@@ -1,43 +1,67 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# >>> GitHub doc
+# https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# --- Dependências / Expo / RN ---
 node_modules/
-
-# Expo
 .expo/
+.expo-shared/
 dist/
 web-build/
 expo-env.d.ts
 
-# Native
-.kotlin/
+# --- Ambiente (não subir segredos) ---
+.env
+.env.*
+!.env.example
+*.pem
+
+# --- Logs / Debug ---
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+.metro-health-check*
+
+# --- Tipos / Build info ---
+*.tsbuildinfo
+
+# --- Web / Frameworks comuns ---
+.web/
+.next/
+out/
+
+# --- iOS / Android (gerados pelo prebuild)
+# Se você NÃO quer versionar código nativo do prebuild, mantenha essas linhas:
+ios/
+android/
+# Caso você pretenda versionar nativo (bare/ci), comente as duas acima e use os ignores detalhados:
+# ios/Pods/
+# ios/DerivedData/
+# ios/build/
+# android/.gradle/
+# android/build/
+# android/app/build/
+# android/local.properties
+
+# --- Chaves / perfis iOS/Android ---
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
 *.mobileprovision
 
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
+# --- SO / IDE ---
 .DS_Store
-*.pem
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 
-# local env files
-.env*.local
+# --- Kotlin (artifacts) ---
+.kotlin/
 
-# typescript
-*.tsbuildinfo
-
+# --- Exemplos / mock local ---
 app-example
-
-# generated native folders
-/ios
-/android
