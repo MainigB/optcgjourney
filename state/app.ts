@@ -1,4 +1,3 @@
-// state/app.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type Dice = 'won' | 'lost' | 'none';
@@ -24,6 +23,7 @@ export interface Tournament {
   wins: number;   // sempre recalculado a partir de rounds
   losses: number;
   rounds?: Round[];
+  finalized?: boolean; // <- NOVO: quando true, bloqueia adição de rounds
 }
 
 const K_TOURNAMENTS = 'tournaments';
@@ -57,10 +57,14 @@ export function deckKey(s: string) {
   // 2) remove acentos
   t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-  // 3) remove emojis
-  t = t.replace(/(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\p{Emoji})/gu, '');
+  // 3) remove emojis (com fallback p/ engines sem \p{…})
+  try {
+    t = t.replace(/(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\p{Emoji})/gu, '');
+  } catch {
+    t = t.replace(/[\u{1F000}-\u{1FAFF}]/gu, '');
+  }
 
-  // 4) normaliza pontuação “exótica” → espaço (evita diferenças por ·, •, ・ etc.)
+  // 4) normaliza pontuação “exótica” → espaço
   t = t.replace(/[^\p{L}\p{N}&()'’\- ]+/gu, ' ');
 
   // 5) normaliza aspas “curly” para simples
@@ -75,7 +79,6 @@ export function deckKey(s: string) {
 function coerceOrder(v: any): Order | undefined {
   if (v === 'first' || v === 1 || v === '1' || /^first/i.test(v)) return 'first';
   if (v === 'second' || v === 2 || v === '2' || /^second/i.test(v)) return 'second';
-  // alguns UIs antigos podem salvar 'odd'/'even', 'primeiro'/'segundo'
   if (/^prime/i.test(String(v))) return 'first';
   if (/^segu/i.test(String(v))) return 'second';
   return undefined;
@@ -127,6 +130,7 @@ export async function loadTournaments(): Promise<Tournament[]> {
         rounds,
         wins: rec.wins,
         losses: rec.losses,
+        finalized: Boolean((t as any).finalized) || false, // <- garante default
       } as Tournament;
     });
 
@@ -156,6 +160,7 @@ export function makeTournament(data: { name: string; deck: string; date?: number
     wins: 0,
     losses: 0,
     rounds: [],
+    finalized: false, // <- default
   };
 }
 
@@ -209,8 +214,7 @@ export function matchupsForDeck(list: Tournament[], myDeck: string) {
       const cur = map.get(k) ?? { opponent: label, wins: 0, losses: 0, rounds: 0 };
       if (r.result === 'win') cur.wins++; else cur.losses++;
       cur.rounds++;
-      // preserva o último rótulo “bonito” (com emoji e set)
-      cur.opponent = label;
+      cur.opponent = label; // preserva o último rótulo “bonito”
       map.set(k, cur);
     }
   }
@@ -252,12 +256,11 @@ export function deckSplits(list: Tournament[], myDeck: string) {
 // ---------------- Splits específicos do matchup (inclui MATRIZ) ----------------
 export function matchupSplitsForDeck(list: Tournament[], myDeck: string, opponentDeck: string) {
   const me = deckKey(myDeck);
-  const oppExact = deckKeyExact(opponentDeck);   // <<---- usa EXATO do parâmetro
+  const oppExact = deckKeyExact(opponentDeck);
 
   let w = 0, l = 0;
   let o1w = 0, o1l = 0, o2w = 0, o2l = 0;
   let wonW = 0, wonL = 0, lostW = 0, lostL = 0;
-  // matriz ordem × dado
   let fWonW = 0, fWonL = 0, fLostW = 0, fLostL = 0;
   let sWonW = 0, sWonL = 0, sLostW = 0, sLostL = 0;
 
@@ -310,6 +313,11 @@ export async function addRoundToTournament(
   if (i < 0) return null;
 
   const t = { ...list[i] };
+  if (t.finalized) {
+    // não permite adicionar novos rounds em torneio finalizado
+    return t;
+  }
+
   const rounds = t.rounds ? [...t.rounds] : [];
   const round: Round = sanitizeRound(
     {
@@ -338,6 +346,7 @@ export async function removeRound(tournamentId: string, roundId: string): Promis
   if (i < 0) return null;
 
   const t = { ...list[i] };
+  // Remover round continua permitido (pode corrigir erros de input)
   const kept = (t.rounds ?? []).filter((r) => r.id !== roundId).map(sanitizeRound);
   kept.forEach((r, idx) => (r.num = idx + 1));
 
@@ -345,6 +354,19 @@ export async function removeRound(tournamentId: string, roundId: string): Promis
   const nextT: Tournament = { ...t, rounds: kept, wins: rec.wins, losses: rec.losses };
   const next = [...list];
   next[i] = nextT;
+  await saveTournaments(next);
+  return nextT;
+}
+
+// ---- Finalizar / Reabrir torneio ----
+export async function setTournamentFinalized(tournamentId: string, finalized: boolean): Promise<Tournament | null> {
+  const list = await loadTournaments();
+  const i = list.findIndex(t => t.id === tournamentId);
+  if (i < 0) return null;
+
+  const t0 = list[i];
+  const nextT: Tournament = { ...t0, finalized: Boolean(finalized) };
+  const next = [...list]; next[i] = nextT;
   await saveTournaments(next);
   return nextT;
 }
