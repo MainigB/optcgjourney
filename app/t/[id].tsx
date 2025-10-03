@@ -1,3 +1,4 @@
+// app/t/[id].tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, Alert, ScrollView, Modal } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -34,9 +35,9 @@ function Segmented({
   options,
   value,
   onChange,
-  trailing,
+  trailing, // { label: string; onPress?: () => void }
   height = 44,
-  disabled = false, // <- NOVO
+  disabled = false,
 }: {
   options: { key: string; label: string; leadingLabel?: string }[];
   value: string | null;
@@ -186,7 +187,7 @@ export default function TournamentDetail() {
 
   async function addRound() {
     if (!t) return;
-    if (t.finalized) {
+    if ((t as any).finalized) {
       Alert.alert('Torneio finalizado', 'Não é possível adicionar novos rounds.');
       return;
     }
@@ -206,7 +207,7 @@ export default function TournamentDetail() {
     }
   }
 
-  const canSave = Boolean(oppSelected && order && result) && Boolean(t && !t.finalized);
+  const canSave = Boolean(oppSelected && order && result) && Boolean(t && !(t as any).finalized);
 
   if (!oswaldLoaded || !notoLoaded || loading || !t) {
     return (
@@ -226,12 +227,13 @@ export default function TournamentDetail() {
   const tone: 'ok' | 'bad' | 'mid' =
     rec.wins > rec.losses ? 'ok' : rec.wins < rec.losses ? 'bad' : 'mid';
 
-  const disabled = t.finalized === true;
+  const disabled = (t as any).finalized === true;
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
-        {/* HEADER plano, sem cards */}
+      {/* ====== FIXO (sem scroll): Header + Deck ====== */}
+      <View style={{ flexShrink: 0, padding: 16, paddingBottom: 0 }}>
+        {/* HEADER plano */}
         <View style={{ marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
             <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
@@ -241,12 +243,13 @@ export default function TournamentDetail() {
               {t.name}
             </Text>
 
-            {t.finalized ? (
+            {(t as any).finalized ? (
               <View style={{ borderWidth: 1, borderColor: BRAND, paddingHorizontal: 8, paddingVertical: 4 }}>
                 <Text style={{ color: BRAND, fontFamily: 'NotoSans_700Bold' }}>FINALIZADO</Text>
               </View>
             ) : null}
           </View>
+
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
               Resultado {rec.wins}-{rec.losses}
@@ -257,7 +260,7 @@ export default function TournamentDetail() {
           </View>
         </View>
 
-        {/* Linha do deck (flat) */}
+        {/* Linha do deck */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
           <DeckAvatar label={t.deck} tone={tone} size={56} />
           <View style={{ flex: 1 }}>
@@ -271,9 +274,16 @@ export default function TournamentDetail() {
             </Text>
           </View>
         </View>
+      </View>
 
+      {/* ====== SCROLL APENAS NESTE MEIO: Aviso + Form + Tabela ====== */}
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+      >
         {/* Aviso de bloqueio */}
-        {t.finalized ? (
+        {(t as any).finalized ? (
           <View style={{ borderWidth: 1, borderColor: LINE, padding: 12, backgroundColor: '#f8fafc', marginTop: 6 }}>
             <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
               Este torneio está finalizado. Adição/edição de rounds está bloqueada.
@@ -371,7 +381,7 @@ export default function TournamentDetail() {
             value={dice === 'none' ? null : dice}
             onChange={(k) => setDice((k as Dice) || 'none')}
             options={[
-              { key: 'won',  label: 'VENCI' },
+              { key: 'won', label: 'VENCI' },
               { key: 'lost', label: 'PERDI' },
             ]}
             disabled={disabled}
@@ -384,7 +394,7 @@ export default function TournamentDetail() {
               value={order ?? null}
               onChange={(k) => setOrder(k as Order)}
               options={[
-                { key: 'first',  label: 'PLAY' },
+                { key: 'first', label: 'PLAY' },
                 { key: 'second', label: 'DRAW' },
               ]}
               disabled={disabled}
@@ -398,7 +408,7 @@ export default function TournamentDetail() {
               value={result ?? null}
               onChange={(k) => setResult(k as Result)}
               options={[
-                { key: 'win',  label: 'VENCI' },
+                { key: 'win', label: 'VENCI' },
                 { key: 'loss', label: 'PERDI' },
               ]}
               disabled={disabled}
@@ -452,9 +462,11 @@ export default function TournamentDetail() {
             (t.rounds ?? []).map((r) => <RowItem key={r.id} r={r} />)
           )}
         </View>
+      </ScrollView>
 
-        {/* Botões: Voltar + Finalizar */}
-        <View style={{ marginTop: 16, gap: 10 }}>
+      {/* ====== FIXO (sem scroll): Botões ====== */}
+      <View style={{ padding: 16, paddingTop: 12 }}>
+        <View style={{ gap: 10 }}>
           <Pressable
             onPress={() => router.back()}
             android_ripple={{ color: '#00000010' }}
@@ -476,30 +488,30 @@ export default function TournamentDetail() {
           {/* FINALIZAR / REABRIR */}
           <Pressable
             onPress={() => setFinishOpen(true)}
-            android_ripple={{ color: t.finalized ? '#00000010' : '#ffffff22' }}
+            android_ripple={{ color: (t as any).finalized ? '#00000010' : '#ffffff22' }}
             style={{
               height: 48,
               borderRadius: 0,
-              backgroundColor: t.finalized ? '#fff' : BRAND,
-              borderWidth: t.finalized ? 1 : 0,
-              borderColor: t.finalized ? BRAND : 'transparent',
+              backgroundColor: (t as any).finalized ? '#fff' : BRAND,
+              borderWidth: (t as any).finalized ? 1 : 0,
+              borderColor: (t as any).finalized ? BRAND : 'transparent',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
             <Text
               style={{
-                color: t.finalized ? BRAND : '#fff',
+                color: (t as any).finalized ? BRAND : '#fff',
                 fontSize: 14,
                 letterSpacing: 1,
                 fontFamily: 'NotoSans_700Bold',
               }}
             >
-              {t.finalized ? 'REABRIR TORNEIO' : 'FINALIZAR TORNEIO'}
+              {(t as any).finalized ? 'REABRIR TORNEIO' : 'FINALIZAR TORNEIO'}
             </Text>
           </Pressable>
         </View>
-      </ScrollView>
+      </View>
 
       {/* MODAL de confirmação */}
       <Modal animationType="fade" transparent visible={finishOpen} onRequestClose={() => setFinishOpen(false)}>
@@ -507,13 +519,13 @@ export default function TournamentDetail() {
           <View style={{ width: '100%', maxWidth: 420, backgroundColor: '#fff', borderWidth: 1, borderColor: LINE }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: LINE }}>
               <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16 }}>
-                {t.finalized ? 'Reabrir torneio?' : 'Finalizar torneio?'}
+                {(t as any).finalized ? 'Reabrir torneio?' : 'Finalizar torneio?'}
               </Text>
             </View>
 
             <View style={{ padding: 16 }}>
               <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-                {t.finalized
+                {(t as any).finalized
                   ? 'Ao reabrir, você poderá adicionar novos rounds novamente.'
                   : 'Ao finalizar, não será possível adicionar novos rounds. Você pode reabrir depois se precisar.'}
               </Text>
@@ -530,7 +542,7 @@ export default function TournamentDetail() {
 
               <Pressable
                 onPress={async () => {
-                  const next = await setTournamentFinalized(t.id, !t.finalized);
+                  const next = await setTournamentFinalized(t.id, !(t as any).finalized);
                   if (next) setT(next);
                   setFinishOpen(false);
                 }}
@@ -542,16 +554,16 @@ export default function TournamentDetail() {
                   justifyContent: 'center',
                   borderTopWidth: 1,
                   borderColor: LINE,
-                  backgroundColor: t.finalized ? '#fff' : BRAND,
+                  backgroundColor: (t as any).finalized ? '#fff' : BRAND,
                 }}
               >
                 <Text
                   style={{
                     fontFamily: 'NotoSans_700Bold',
-                    color: t.finalized ? BRAND : '#fff',
+                    color: (t as any).finalized ? BRAND : '#fff',
                   }}
                 >
-                  {t.finalized ? 'REABRIR' : 'FINALIZAR'}
+                  {(t as any).finalized ? 'REABRIR' : 'FINALIZAR'}
                 </Text>
               </Pressable>
             </View>
