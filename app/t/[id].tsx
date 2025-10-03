@@ -14,55 +14,106 @@ import {
   Result,
 } from '../../state/app';
 import { DECKS } from '../../data/decks';
-import { UI, Card, DeckAvatar } from '../../components/ui';
+import { UI, DeckAvatar } from '../../components/ui';
 
-// Fonts (mesmo padrão do app)
 import { useFonts as useOswald, Oswald_400Regular } from '@expo-google-fonts/oswald';
 import { useFonts as useNoto, NotoSans_700Bold } from '@expo-google-fonts/noto-sans';
 
 const BRAND = '#8E7D55';
-const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const INK = UI?.color?.ink ?? '#0f172a';
+const SUB = UI?.color?.sub ?? '#64748b';
+const LINE = UI?.color?.line ?? '#e5e7eb';
+const MID = UI?.color?.mid ?? '#cbd5e1';
+const SEG_FILL = '#8E939E'; // cinza cheio do figma
+const PLACEHOLDER = '#9aa3af';
 
-// colunas da tabela
-const COL = { round: 56, dice: 64, order: 64, result: 64 };
+const normalize = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-// Pill opcional (usa brand quando ativo)
-function Pill({
-  active,
-  children,
-  danger = false,
+function Segmented({
+  options,
+  value,
+  onChange,
+  trailing, // { label: string; onPress?: () => void }
+  height = 44,
 }: {
-  active: boolean;
-  children: React.ReactNode;
-  danger?: boolean;
+  options: { key: string; label: string; leadingLabel?: string }[];
+  value: string | null;
+  onChange: (k: string) => void;
+  trailing?: { label: string; onPress?: () => void };
+  height?: number;
 }) {
-  const bg = active
-    ? danger
-      ? '#ffe4e6'
-      : 'rgba(142,125,85,0.12)'
-    : 'transparent';
-  const border = danger ? '#fecaca' : active ? BRAND : UI.color.line;
   return (
     <View
       style={{
-        paddingVertical: 10,
-        paddingHorizontal: 12,
+        flexDirection: 'row',
         borderWidth: 1,
-        borderColor: border,
-        borderRadius: 999,
-        backgroundColor: bg,
-        alignItems: 'center',
+        borderColor: LINE,
+        borderRadius: 0,
+        height,
+        overflow: 'hidden',
+        backgroundColor: '#fff',
       }}
     >
-      <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{children}</Text>
+      {options.map((opt, i) => {
+        const selected = value === opt.key;
+        return (
+          <Pressable
+            key={opt.key}
+            onPress={() => onChange(opt.key)}
+            android_ripple={{ color: '#00000010' }}
+            style={{
+              flex: 1,
+              backgroundColor: selected ? SEG_FILL : '#fff',
+              justifyContent: 'center',
+              paddingHorizontal: 14,
+              borderRightWidth: i < options.length - 1 || !!trailing ? 1 : 0,
+              borderRightColor: LINE,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {opt.leadingLabel ? (
+                <Text style={{ color: selected ? '#fff' : SUB, fontFamily: 'NotoSans_700Bold' }}>
+                  {opt.leadingLabel}
+                </Text>
+              ) : null}
+              <Text
+                style={{
+                  color: selected ? '#fff' : INK,
+                  letterSpacing: 1,
+                  fontFamily: 'NotoSans_700Bold',
+                }}
+              >
+                {opt.label}
+              </Text>
+            </View>
+          </Pressable>
+        );
+      })}
+      {trailing ? (
+        <Pressable
+          onPress={trailing.onPress}
+          android_ripple={{ color: '#00000010' }}
+          style={{
+            width: height,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderLeftWidth: 1,
+            borderLeftColor: LINE,
+          }}
+        >
+          <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>{trailing.label}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
-function RowItem({ r, onDelete }: { r: Round; onDelete: (id: string) => void }) {
+function RowItem({ r }: { r: Round }) {
   const orderBadge = r.order === 'first' ? '1' : '2';
-  const diceTxt = r.dice === 'won' ? '🎲✓' : r.dice === 'lost' ? '🎲✗' : '🎲';
-  const res = r.result === 'win' ? '✅' : '❌';
+  const diceTxt = r.dice === 'won' ? 'W' : r.dice === 'lost' ? 'L' : '-';
+  const resTxt = r.result === 'win' ? 'W' : 'L';
+
   return (
     <View
       style={{
@@ -70,38 +121,25 @@ function RowItem({ r, onDelete }: { r: Round; onDelete: (id: string) => void }) 
         alignItems: 'center',
         paddingVertical: 10,
         borderBottomWidth: 1,
-        borderColor: '#f1f5f9',
+        borderBottomColor: LINE,
       }}
     >
-      <Text style={{ width: COL.round, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>
-        {r.num}
+      <Text style={{ width: 56, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>{r.num}</Text>
+      <Text numberOfLines={1} style={{ flex: 1, fontFamily: 'NotoSans_700Bold' }}>
+        {r.opponentLeader || '-'}
       </Text>
-      <View style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={{ fontFamily: 'NotoSans_700Bold' }}>
-          {r.opponentLeader || '-'}
-        </Text>
-      </View>
-      <Text style={{ width: COL.dice, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>
-        {diceTxt}
-      </Text>
-      <Text style={{ width: COL.order, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>
-        {orderBadge}
-      </Text>
+      <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>{diceTxt}</Text>
+      <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>{orderBadge}</Text>
       <Text
         style={{
-          width: COL.result,
+          width: 64,
           textAlign: 'center',
-          color: r.result === 'win' ? UI.color.ok : UI.color.bad,
+          color: r.result === 'win' ? '#16a34a' : '#dc2626',
           fontFamily: 'NotoSans_700Bold',
         }}
       >
-        {res}
+        {resTxt}
       </Text>
-      {/* Excluir (se quiser reativar)
-      <Pressable onPress={() => onDelete(r.id)} style={{ paddingHorizontal: 10 }}>
-        <Text style={{ color: 'crimson', fontFamily: 'NotoSans_700Bold' }}>🗑️</Text>
-      </Pressable>
-      */}
     </View>
   );
 }
@@ -111,7 +149,6 @@ export default function TournamentDetail() {
   const [t, setT] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // formulário
   const [oppInput, setOppInput] = useState('');
   const [oppSelected, setOppSelected] = useState<string | null>(null);
   const [showOppList, setShowOppList] = useState(false);
@@ -131,10 +168,7 @@ export default function TournamentDetail() {
     })();
   }, [id]);
 
-  const rec = useMemo(
-    () => (t ? computeRecord(t) : { wins: 0, losses: 0 }),
-    [t]
-  );
+  const rec = useMemo(() => (t ? computeRecord(t) : { wins: 0, losses: 0 }), [t]);
 
   const oppOptions = useMemo(() => {
     const q = normalize(oppInput);
@@ -145,21 +179,12 @@ export default function TournamentDetail() {
   async function addRound() {
     if (!t) return;
     if (!oppSelected || !order || !result) {
-      Alert.alert(
-        'Preencha todos os campos',
-        'Selecione o líder do oponente, a ordem (1º/2º) e o resultado (W/L).'
-      );
+      Alert.alert('Preencha todos os campos', 'Selecione líder, ordem e resultado.');
       return;
     }
-    const updated = await addRoundToTournament(t.id, {
-      opponentLeader: oppSelected,
-      dice,
-      order,
-      result,
-    });
+    const updated = await addRoundToTournament(t.id, { opponentLeader: oppSelected, dice, order, result });
     if (updated) {
       setT(updated);
-      // limpa form
       setOppInput('');
       setOppSelected(null);
       setShowOppList(false);
@@ -169,19 +194,11 @@ export default function TournamentDetail() {
     }
   }
 
-  async function deleteRound(roundId: string) {
-    if (!t) return;
-    const updated = await removeRound(t.id, roundId);
-    if (updated) setT(updated);
-  }
-
   const canSave = Boolean(oppSelected && order && result);
 
   if (!oswaldLoaded || !notoLoaded || loading || !t) {
     return (
-      <View
-        style={{ flex: 1, backgroundColor: UI.color.bg, alignItems: 'center', justifyContent: 'center' }}
-      >
+      <View style={{ flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ fontFamily: 'NotoSans_700Bold' }}>
           {loading ? 'Carregando…' : 'Torneio não encontrado.'}
         </Text>
@@ -197,120 +214,69 @@ export default function TournamentDetail() {
   const tone: 'ok' | 'bad' | 'mid' =
     rec.wins > rec.losses ? 'ok' : rec.wins < rec.losses ? 'bad' : 'mid';
 
-  // Botões pill do rodapé
-  const btnBase = {
-    width: '82%',
-    height: 48 as const,
-    borderRadius: 999 as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    alignSelf: 'center' as const,
-    overflow: 'hidden' as const,
-    ...(UI.shadow ?? {
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOpacity: 0.08,
-      shadowRadius: 6,
-      shadowOffset: { width: 0, height: 3 },
-    }),
-  };
-  const btnPrimary = { ...btnBase, backgroundColor: canSave ? BRAND : UI.color.mid };
-  const btnSecondary = { ...btnBase, backgroundColor: '#fff', borderWidth: 2, borderColor: BRAND };
-
   return (
-    <View style={{ flex: 1, backgroundColor: UI.color.bg }}>
-      {/* TÍTULO */}
-      <View style={{ paddingTop: 28 }}>
-        <Text
-          style={{
-            fontSize: 28,
-            textAlign: 'center',
-            color: UI.color.ink,
-            fontFamily: 'Oswald_400Regular',
-            letterSpacing: 0.5,
-          }}
-        >
-          Torneio
-        </Text>
-      </View>
-
-      {/* CONTEÚDO */}
-
-        {/* Card do torneio */}
-        <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <DeckAvatar label={t.deck} tone={tone} size={72} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 20, fontFamily: 'NotoSans_700Bold' }}>{t.name}</Text>
-              <Text style={{ color: UI.color.sub, marginTop: 6, fontFamily: 'NotoSans_700Bold' }}>
-                <Text style={{ color: UI.color.ink, fontFamily: 'NotoSans_700Bold' }}>{t.deck}</Text>
-              </Text>
-              <Text style={{ color: UI.color.sub, fontFamily: 'NotoSans_700Bold' }}>
-                {new Date(t.date).toLocaleDateString()}
-              </Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: UI.color.sub, fontFamily: 'NotoSans_700Bold' }}>Record</Text>
-              <Text style={{ fontFamily: 'NotoSans_700Bold' }}>
-                {rec.wins}-{rec.losses}
-              </Text>
-            </View>
-          </View>
-        </Card>
-        <ScrollView
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 120 }}
-              >
-        {/* Tabela de rounds */}
-        <Card style={{ padding: 0 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              backgroundColor: '#f8fafc',
-              paddingVertical: 10,
-              borderTopLeftRadius: 12,
-              borderTopRightRadius: 12,
-              borderBottomWidth: 1,
-              borderBottomColor: UI.color.line,
-            }}
-          >
-            <Text style={{ width: COL.round, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>
-              Round
-            </Text>
-            <Text style={{ flex: 1, fontFamily: 'NotoSans_700Bold' }}>Opponent</Text>
-            <Text style={{ width: COL.dice, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>
-              Dice
-            </Text>
-            <Text style={{ width: COL.order, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>
-              Order
-            </Text>
-            <Text style={{ width: COL.result, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>
-              Result
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
+        {/* HEADER plano, sem cards */}
+        <View style={{ marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+            <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
+              <Text style={{ fontSize: 18 }}>←</Text>
+            </Pressable>
+            <Text style={{ fontSize: 22, color: INK, fontFamily: 'Oswald_400Regular', letterSpacing: 0.3 }}>
+              {t.name}
             </Text>
           </View>
-
-          {(t.rounds ?? []).length === 0 ? (
-            <Text style={{ padding: 12, color: UI.color.sub, fontFamily: 'NotoSans_700Bold' }}>
-              Sem rodadas ainda.
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
+              Resultado {rec.wins}-{rec.losses}
             </Text>
-          ) : (
-            <View>
-              {(t.rounds ?? []).map((item) => (
-                <RowItem key={item.id} r={item} onDelete={deleteRound} />
-              ))}
-            </View>
-          )}
-        </Card>
+            <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
+              {new Date(t.date).toLocaleDateString()}
+            </Text>
+          </View>
+        </View>
 
-        {/* Form: adicionar rodada */}
-        <Card>
-          <Text style={{ fontSize: 18, marginBottom: 8, fontFamily: 'NotoSans_700Bold' }}>
-            Round {(t.rounds?.length ?? 0) + 1}
-          </Text>
+        {/* Linha do deck (flat) */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
+          <DeckAvatar label={t.deck} tone={tone} size={56} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, fontFamily: 'NotoSans_700Bold', color: INK }}>{t.deck}</Text>
+            <Text style={{ color: SUB, marginTop: 4, fontFamily: 'NotoSans_700Bold' }}>{t.name}</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>Record</Text>
+            <Text style={{ fontFamily: 'NotoSans_700Bold' }}>
+              {rec.wins}-{rec.losses}
+            </Text>
+          </View>
+        </View>
 
-          {/* Opponent */}
-          <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Opponent Leader</Text>
-          <View style={{ position: 'relative', marginBottom: 10 }}>
+        {/* FORM plano */}
+        <View style={{ marginTop: 8 }}>
+          {/* Título do round + limpar (texto simples) */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <Text style={{ fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>
+              Round {(t.rounds?.length ?? 0) + 1}
+            </Text>
+            <Pressable
+              onPress={() => {
+                setOppInput('');
+                setOppSelected(null);
+                setShowOppList(false);
+                setDice('none');
+                setOrder(null);
+                setResult(null);
+              }}
+              hitSlop={10}
+            >
+              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>LIMPAR</Text>
+            </Pressable>
+          </View>
+
+          {/* Opponent leader (input quadrado) */}
+          <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Líder do oponente</Text>
+          <View style={{ position: 'relative', marginBottom: 12 }}>
             <TextInput
               value={oppInput}
               onChangeText={(txt) => {
@@ -319,28 +285,31 @@ export default function TournamentDetail() {
                 setShowOppList(true);
               }}
               onFocus={() => setShowOppList(true)}
-              placeholder="ex.: Monkey D. Luffy (OP11)"
-              placeholderTextColor="#475569"
+              placeholder="Ex.: Roronoa Zoro (OP12)"
+              placeholderTextColor={PLACEHOLDER}
               style={{
                 borderWidth: 1,
-                borderColor: UI.color.line,
-                borderRadius: UI.radius.lg,
-                paddingHorizontal: 14,
+                borderColor: LINE,
+                borderRadius: 0,
+                paddingHorizontal: 12,
                 paddingVertical: 12,
                 fontFamily: 'NotoSans_700Bold',
-                color: UI.color.ink,
+                color: INK,
+                backgroundColor: '#fff',
               }}
             />
             {showOppList && (
-              <Card
+              <View
                 style={{
                   position: 'absolute',
-                  top: 56,
+                  top: 46,
                   left: 0,
                   right: 0,
-                  maxHeight: 250,
-                  padding: 0,
-                  overflow: 'hidden',
+                  maxHeight: 240,
+                  borderWidth: 1,
+                  borderColor: LINE,
+                  borderTopWidth: 0,
+                  backgroundColor: '#fff',
                   zIndex: 10,
                 }}
               >
@@ -354,12 +323,7 @@ export default function TournamentDetail() {
                         setShowOppList(false);
                       }}
                       android_ripple={{ color: '#0000000d' }}
-                      style={{
-                        paddingHorizontal: 14,
-                        paddingVertical: 12,
-                        borderBottomWidth: 1,
-                        borderBottomColor: UI.color.line,
-                      }}
+                      style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: LINE }}
                     >
                       <Text numberOfLines={1} style={{ fontFamily: 'NotoSans_700Bold' }}>
                         {item}
@@ -367,72 +331,117 @@ export default function TournamentDetail() {
                     </Pressable>
                   ))}
                 </ScrollView>
-              </Card>
+              </View>
             )}
           </View>
 
-          {/* Dice */}
-          <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Dice</Text>
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-            <Pressable onPress={() => setDice(dice === 'won' ? 'none' : 'won')} style={{ flex: 1 }}>
-              <Pill active={dice === 'won'}>🎲 W</Pill>
-            </Pressable>
-            <Pressable onPress={() => setDice(dice === 'lost' ? 'none' : 'lost')} style={{ flex: 1 }}>
-              <Pill active={dice === 'lost'} danger>
-                🎲 L
-              </Pill>
-            </Pressable>
+          {/* Dado */}
+          <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Dado</Text>
+          <Segmented
+            value={dice === 'none' ? null : dice}
+            onChange={(k) => setDice((k as Dice) || 'none')}
+            options={[
+              { key: 'won',  label: 'VENCI' },
+              { key: 'lost', label: 'PERDI' },
+            ]}
+          />
+
+          {/* Ordem */}
+          <View style={{ marginTop: 14 }}>
+            <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Ordem</Text>
+            <Segmented
+              value={order ?? null}
+              onChange={(k) => setOrder(k as Order)}
+              options={[
+                { key: 'first',  label: 'PLAY' },
+                { key: 'second', label: 'DRAW' },
+              ]}
+            />
           </View>
 
-          {/* Order */}
-          <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Ordem</Text>
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-            <Pressable onPress={() => setOrder(order === 'first' ? null : 'first')} style={{ flex: 1 }}>
-              <Pill active={order === 'first'}>1️⃣</Pill>
-            </Pressable>
-            <Pressable onPress={() => setOrder(order === 'second' ? null : 'second')} style={{ flex: 1 }}>
-              <Pill active={order === 'second'}>2️⃣</Pill>
-            </Pressable>
+          {/* Resultado */}
+          <View style={{ marginTop: 14 }}>
+            <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Resultado</Text>
+            <Segmented
+              value={result ?? null}
+              onChange={(k) => setResult(k as Result)}
+              options={[
+                { key: 'win',  label: 'VENCI' },
+                { key: 'loss', label: 'PERDI' },
+              ]}
+            />
           </View>
 
-          {/* Result */}
-          <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Resultado</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Pressable onPress={() => setResult(result === 'win' ? null : 'win')} style={{ flex: 1 }}>
-              <Pill active={result === 'win'}>Venci ✅</Pill>
-            </Pressable>
-            <Pressable onPress={() => setResult(result === 'loss' ? null : 'loss')} style={{ flex: 1 }}>
-              <Pill active={result === 'loss'} danger>
-                Perdi ❌
-              </Pill>
+
+          {/* CTA flat */}
+          <View style={{ marginTop: 16 }}>
+            <Pressable
+              onPress={addRound}
+              disabled={!canSave}
+              android_ripple={{ color: '#00000010' }}
+              style={{
+                height: 48,
+                borderRadius: 0,
+                backgroundColor: canSave ? BRAND : MID,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
+                ADICIONAR ROUND
+              </Text>
             </Pressable>
           </View>
-        </Card>
+        </View>
+
+        {/* Tabela de rounds (flat) */}
+        <View style={{ marginTop: 18 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              paddingVertical: 10,
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderColor: LINE,
+              backgroundColor: '#f8fafc',
+              paddingHorizontal: 12,
+            }}
+          >
+            <Text style={{ width: 56, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>Round</Text>
+            <Text style={{ flex: 1, fontFamily: 'NotoSans_700Bold' }}>Opponent</Text>
+            <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>Dice</Text>
+            <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>Order</Text>
+            <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>Result</Text>
+          </View>
+
+          {(t.rounds ?? []).length === 0 ? (
+            <Text style={{ paddingVertical: 12, color: SUB, fontFamily: 'NotoSans_700Bold' }}>Sem rodadas ainda.</Text>
+          ) : (
+            (t.rounds ?? []).map((r) => <RowItem key={r.id} r={r} />)
+          )}
+        </View>
+
+        {/* Voltar (flat) */}
+        <View style={{ marginTop: 16 }}>
+          <Pressable
+            onPress={() => router.back()}
+            android_ripple={{ color: '#00000010' }}
+            style={{
+              height: 48,
+              borderRadius: 0,
+              backgroundColor: '#fff',
+              borderWidth: 1,
+              borderColor: BRAND,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ color: BRAND, fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
+              VOLTAR
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
-
-      {/* RODAPÉ: botões pill iguais ao resto do app */}
-      <View style={{ paddingVertical: 16, gap: 12 }}>
-        <Pressable
-          onPress={addRound}
-          disabled={!canSave}
-          android_ripple={{ color: '#ffffff22' }}
-          style={({ pressed }) => [btnPrimary, pressed && canSave ? { opacity: 0.9, transform: [{ scale: 0.998 }] } : null]}
-        >
-          <Text style={{ color: 'white', fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-            ADD ROUND
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => router.back()}
-          android_ripple={{ color: '#00000010' }}
-          style={({ pressed }) => [btnSecondary, pressed && { opacity: 0.95, transform: [{ scale: 0.998 }] }]}
-        >
-          <Text style={{ color: BRAND, fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-            VOLTAR
-          </Text>
-        </Pressable>
-      </View>
     </View>
   );
 }

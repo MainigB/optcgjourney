@@ -94,7 +94,6 @@ export default function Home() {
   const btnBase = {
     width: '82%',
     height: 48 as const,              // altura consistente
-    borderRadius: 999 as const,       // bem arredondado
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     alignSelf: 'center' as const,
@@ -179,7 +178,7 @@ export default function Home() {
           android_ripple={{ color: '#ffffff22' }}
           style={btnPrimary}
         >
-          <Text style={{ color: 'white', fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>Add Tournament</Text>
+          <Text style={{ color: 'white', fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>ADICIONAR TORNEIO</Text>
         </Pressable>
 
         <Pressable
@@ -187,7 +186,7 @@ export default function Home() {
           android_ripple={{ color: '#00000010' }}
           style={btnSecondary}
         >
-          <Text style={{ color: BRAND, fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>Your Decks</Text>
+          <Text style={{ color: BRAND, fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>MEUS DECKS</Text>
         </Pressable>
 
                 <Text
