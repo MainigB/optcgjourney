@@ -79,7 +79,7 @@ function Segmented({
               ) : null}
               <Text
                 style={{
-                  color: selected ? '#fff' : INK,
+                  color: selected ? '#fff' : SUB,
                   letterSpacing: 1,
                   fontFamily: 'NotoSans_700Bold',
                 }}
@@ -221,7 +221,7 @@ export default function TournamentDetail() {
         <View style={{ marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
             <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
-              <Text style={{ fontSize: 18 }}>←</Text>
+              <Text style={{ fontSize: 48, color: BRAND }}>←</Text>
             </Pressable>
             <Text style={{ fontSize: 22, color: INK, fontFamily: 'Oswald_400Regular', letterSpacing: 0.3 }}>
               {t.name}
