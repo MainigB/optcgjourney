@@ -4,7 +4,7 @@ import { Image, Platform, Pressable, Text, View, ViewStyle } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getLeaderImageURL } from '../data/leaderImages';
 
-/* ========= Design tokens ========= */
+/* ========= Design tokens (flat) ========= */
 export const UI = {
   color: {
     bg: '#f1f5f9',       // slate-100
@@ -17,12 +17,14 @@ export const UI = {
     mid: '#94a3b8',
     primary: '#0f172a',
   },
+  // zeramos todos os raios p/ estilo “quadrado”
   radius: {
-    xs: 8, sm: 10, md: 12, lg: 16, xl: 20
+    xs: 0, sm: 9, md: 9, lg: 0, xl: 0
   },
+  // removemos sombra para um look mais flat
   shadow: Platform.select<ViewStyle>({
-    ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
-    android: { elevation: 2 },
+    ios:     {},
+    android: {},
     default: {},
   }) as ViewStyle,
 };
@@ -74,7 +76,19 @@ export function HeaderBar({
 
 export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
   return (
-    <View style={[{ backgroundColor: UI.color.card, borderRadius: UI.radius.lg, borderWidth: 1, borderColor: UI.color.line, padding: 12 }, UI.shadow, style]}>
+    <View
+      style={[
+        {
+          backgroundColor: UI.color.card,
+          borderRadius: UI.radius.lg, // = 0 (flat)
+          borderWidth: 1,
+          borderColor: UI.color.line,
+          padding: 12,
+        },
+        UI.shadow, // {} (sem sombra)
+        style,
+      ]}
+    >
       {children}
     </View>
   );
@@ -82,7 +96,16 @@ export function Card({ children, style }: { children: React.ReactNode; style?: V
 
 export function Chip({ label }: { label: string }) {
   return (
-    <View style={{ paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: UI.color.line, borderRadius: 999, backgroundColor: '#fff' }}>
+    <View
+      style={{
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderWidth: 1,
+        borderColor: UI.color.line,
+        borderRadius: UI.radius.xs, // = 0 (sem pílula)
+        backgroundColor: '#fff',
+      }}
+    >
       <Text style={{ fontSize: 12 }}>{label}</Text>
     </View>
   );
@@ -127,13 +150,12 @@ export function DeckAvatar({
   const left = (viewport - imgBox) / 2;
 
   // calcula posição vertical conforme âncora e aplica ajuste fino
-  const EPS = 0.5; // cobre hairlines/artefatos de arredondamento
+  const EPS = 0.5;
   let baseTop = 0;
   if (crop === 'center') baseTop = (viewport - imgBox) / 2;
   if (crop === 'bottom') baseTop = viewport - imgBox;
   baseTop += imgShiftY;
 
-  // impede faixa preta no topo (nunca deixa top > -EPS) e respeita limite inferior
   const top = Math.max(viewport - imgBox, Math.min(-EPS, baseTop));
 
   return (
@@ -141,7 +163,7 @@ export function DeckAvatar({
       style={{
         width: viewport,
         height: viewport,
-        borderRadius: UI.radius.md,
+        borderRadius: UI.radius.md, // = 0 (quadrado)
         overflow: 'hidden',
         borderWidth: 3,
         borderColor,
@@ -157,7 +179,6 @@ export function DeckAvatar({
           resizeMode="cover"
           style={{
             position: 'absolute',
-            // +1px em width/height e -0.5px no left/ajustes para evitar risquinhos nas bordas (Android)
             width: imgBox + 1,
             height: imgBox + 1,
             left: left - 0.5,
@@ -190,7 +211,6 @@ export function DeckAvatar({
     </View>
   );
 }
-
 
 /* ========= Cards de estatística ========= */
 export function SplitCard({ title, w, l }: { title: string; w: number; l: number }) {
@@ -234,7 +254,8 @@ export function SplitTwo({
           <Text style={{ fontWeight: '700', marginBottom: 6 }}>{aLabel}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{
-              width: 36, height: 36, borderRadius: 8, borderWidth: 3,
+              width: 36, height: 36, borderRadius: UI.radius.sm, // = 0
+              borderWidth: 3,
               borderColor: aW > aL ? UI.color.ok : aW < aL ? UI.color.bad : UI.color.mid,
               alignItems: 'center', justifyContent: 'center', backgroundColor: UI.color.ink
             }}>
@@ -242,7 +263,7 @@ export function SplitTwo({
             </View>
             <View>
               <Text style={{ fontWeight: '800' }}>{aW}-{aL}</Text>
-              <Text style={{ color: UI.color.sub }}>{aWR}% WR</Text>
+              <Text style={{ color: UI.color.sub }}>{aWR}%</Text>
             </View>
           </View>
         </View>
@@ -252,7 +273,8 @@ export function SplitTwo({
           <Text style={{ fontWeight: '700', marginBottom: 6 }}>{bLabel}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{
-              width: 36, height: 36, borderRadius: 8, borderWidth: 3,
+              width: 36, height: 36, borderRadius: UI.radius.sm, // = 0
+              borderWidth: 3,
               borderColor: bW > bL ? UI.color.ok : bW < bL ? UI.color.bad : UI.color.mid,
               alignItems: 'center', justifyContent: 'center', backgroundColor: UI.color.ink
             }}>
@@ -260,7 +282,7 @@ export function SplitTwo({
             </View>
             <View>
               <Text style={{ fontWeight: '800' }}>{bW}-{bL}</Text>
-              <Text style={{ color: UI.color.sub }}>{bWR}% WR</Text>
+              <Text style={{ color: UI.color.sub }}>{bWR}%</Text>
             </View>
           </View>
         </View>

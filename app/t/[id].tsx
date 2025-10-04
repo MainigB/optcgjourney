@@ -35,7 +35,7 @@ function Segmented({
   options,
   value,
   onChange,
-  trailing, // { label: string; onPress?: () => void }
+  trailing,
   height = 44,
   disabled = false,
 }: {
@@ -85,7 +85,7 @@ function Segmented({
               ) : null}
               <Text
                 style={{
-                  color: selected ? '#fff' : SUB,
+                  color: selected ? '#fff' : SUB, // <- cinza quando não selecionado
                   letterSpacing: 1,
                   fontFamily: 'NotoSans_700Bold',
                 }}
@@ -231,9 +231,9 @@ export default function TournamentDetail() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      {/* ====== FIXO (sem scroll): Header + Deck ====== */}
+      {/* FIXO: Header + Deck */}
       <View style={{ flexShrink: 0, padding: 16, paddingBottom: 0 }}>
-        {/* HEADER plano */}
+        {/* HEADER */}
         <View style={{ marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
             <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
@@ -276,11 +276,15 @@ export default function TournamentDetail() {
         </View>
       </View>
 
-      {/* ====== SCROLL APENAS NESTE MEIO: Aviso + Form + Tabela ====== */}
+      {/* SCROLL APENAS NO MEIO */}
       <ScrollView
         keyboardShouldPersistTaps="handled"
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+        bounces={false}
+        alwaysBounceVertical={false}
+        overScrollMode="never"
+        showsVerticalScrollIndicator
       >
         {/* Aviso de bloqueio */}
         {(t as any).finalized ? (
@@ -291,150 +295,148 @@ export default function TournamentDetail() {
           </View>
         ) : null}
 
-        {/* FORM plano */}
-        <View style={{ marginTop: 8, opacity: disabled ? 0.6 : 1 }} pointerEvents={disabled ? 'none' : 'auto'}>
-          {/* Título do round + limpar */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <Text style={{ fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>
-              Round {(t.rounds?.length ?? 0) + 1}
-            </Text>
-            <Pressable
-              onPress={() => {
-                setOppInput('');
-                setOppSelected(null);
-                setShowOppList(false);
-                setDice('none');
-                setOrder(null);
-                setResult(null);
-              }}
-              hitSlop={10}
-            >
-              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>LIMPAR</Text>
-            </Pressable>
-          </View>
+        {/* FORM – renderiza apenas quando NÃO estiver finalizado */}
+        {!disabled && (
+          <View style={{ marginTop: 8 }}>
+            {/* Título do round + limpar */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <Text style={{ fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>
+                Round {(t.rounds?.length ?? 0) + 1}
+              </Text>
+              <Pressable
+                onPress={() => {
+                  setOppInput('');
+                  setOppSelected(null);
+                  setShowOppList(false);
+                  setDice('none');
+                  setOrder(null);
+                  setResult(null);
+                }}
+                hitSlop={10}
+              >
+                <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>LIMPAR</Text>
+              </Pressable>
+            </View>
 
-          {/* Opponent leader */}
-          <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Líder do oponente</Text>
-          <View style={{ position: 'relative', marginBottom: 12 }}>
-            <TextInput
-              value={oppInput}
-              onChangeText={(txt) => {
-                setOppInput(txt);
-                setOppSelected(null);
-                setShowOppList(true);
-              }}
-              onFocus={() => setShowOppList(true)}
-              placeholder="Ex.: Roronoa Zoro (OP12)"
-              placeholderTextColor={PLACEHOLDER}
-              editable={!disabled}
-              style={{
-                borderWidth: 1,
-                borderColor: LINE,
-                borderRadius: 0,
-                paddingHorizontal: 12,
-                paddingVertical: 12,
-                fontFamily: 'NotoSans_700Bold',
-                color: INK,
-                backgroundColor: '#fff',
-              }}
-            />
-            {showOppList && !disabled && (
-              <View
+            {/* Opponent leader */}
+            <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Líder do oponente</Text>
+            <View style={{ position: 'relative', marginBottom: 12 }}>
+              <TextInput
+                value={oppInput}
+                onChangeText={(txt) => {
+                  setOppInput(txt);
+                  setOppSelected(null);
+                  setShowOppList(true);
+                }}
+                onFocus={() => setShowOppList(true)}
+                placeholder="Ex.: Roronoa Zoro (OP12)"
+                placeholderTextColor={PLACEHOLDER}
                 style={{
-                  position: 'absolute',
-                  top: 46,
-                  left: 0,
-                  right: 0,
-                  maxHeight: 240,
                   borderWidth: 1,
                   borderColor: LINE,
-                  borderTopWidth: 0,
+                  borderRadius: 0,
+                  paddingHorizontal: 12,
+                  paddingVertical: 12,
+                  fontFamily: 'NotoSans_700Bold',
+                  color: INK,
                   backgroundColor: '#fff',
-                  zIndex: 10,
+                }}
+              />
+              {showOppList && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 46,
+                    left: 0,
+                    right: 0,
+                    maxHeight: 240,
+                    borderWidth: 1,
+                    borderColor: LINE,
+                    borderTopWidth: 0,
+                    backgroundColor: '#fff',
+                    zIndex: 10,
+                  }}
+                >
+                  <ScrollView keyboardShouldPersistTaps="handled">
+                    {oppOptions.map((item) => (
+                      <Pressable
+                        key={item}
+                        onPress={() => {
+                          setOppInput(item);
+                          setOppSelected(item);
+                          setShowOppList(false);
+                        }}
+                        android_ripple={{ color: '#0000000d' }}
+                        style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: LINE }}
+                      >
+                        <Text numberOfLines={1} style={{ fontFamily: 'NotoSans_700Bold' }}>
+                          {item}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+
+            {/* Dado */}
+            <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Dado</Text>
+            <Segmented
+              value={dice === 'none' ? null : dice}
+              onChange={(k) => setDice((k as Dice) || 'none')}
+              options={[
+                { key: 'won', label: 'VENCI' },
+                { key: 'lost', label: 'PERDI' },
+              ]}
+            />
+
+            {/* Ordem */}
+            <View style={{ marginTop: 14 }}>
+              <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Ordem</Text>
+              <Segmented
+                value={order ?? null}
+                onChange={(k) => setOrder(k as Order)}
+                options={[
+                  { key: 'first', label: 'PLAY' },
+                  { key: 'second', label: 'DRAW' },
+                ]}
+              />
+            </View>
+
+            {/* Resultado */}
+            <View style={{ marginTop: 14 }}>
+              <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Resultado</Text>
+              <Segmented
+                value={result ?? null}
+                onChange={(k) => setResult(k as Result)}
+                options={[
+                  { key: 'win', label: 'VENCI' },
+                  { key: 'loss', label: 'PERDI' },
+                ]}
+              />
+            </View>
+
+            {/* CTA */}
+            <View style={{ marginTop: 16 }}>
+              <Pressable
+                onPress={addRound}
+                disabled={!canSave}
+                android_ripple={{ color: '#00000010' }}
+                style={{
+                  height: 48,
+                  borderRadius: 0,
+                  backgroundColor: canSave ? BRAND : MID,
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                <ScrollView keyboardShouldPersistTaps="handled">
-                  {oppOptions.map((item) => (
-                    <Pressable
-                      key={item}
-                      onPress={() => {
-                        setOppInput(item);
-                        setOppSelected(item);
-                        setShowOppList(false);
-                      }}
-                      android_ripple={{ color: '#0000000d' }}
-                      style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: LINE }}
-                    >
-                      <Text numberOfLines={1} style={{ fontFamily: 'NotoSans_700Bold' }}>
-                        {item}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+                <Text style={{ color: '#fff', fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
+                  ADICIONAR ROUND
+                </Text>
+              </Pressable>
+            </View>
           </View>
-
-          {/* Dado */}
-          <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Dado</Text>
-          <Segmented
-            value={dice === 'none' ? null : dice}
-            onChange={(k) => setDice((k as Dice) || 'none')}
-            options={[
-              { key: 'won', label: 'VENCI' },
-              { key: 'lost', label: 'PERDI' },
-            ]}
-            disabled={disabled}
-          />
-
-          {/* Ordem */}
-          <View style={{ marginTop: 14 }}>
-            <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Ordem</Text>
-            <Segmented
-              value={order ?? null}
-              onChange={(k) => setOrder(k as Order)}
-              options={[
-                { key: 'first', label: 'PLAY' },
-                { key: 'second', label: 'DRAW' },
-              ]}
-              disabled={disabled}
-            />
-          </View>
-
-          {/* Resultado */}
-          <View style={{ marginTop: 14 }}>
-            <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Resultado</Text>
-            <Segmented
-              value={result ?? null}
-              onChange={(k) => setResult(k as Result)}
-              options={[
-                { key: 'win', label: 'VENCI' },
-                { key: 'loss', label: 'PERDI' },
-              ]}
-              disabled={disabled}
-            />
-          </View>
-
-          {/* CTA flat */}
-          <View style={{ marginTop: 16 }}>
-            <Pressable
-              onPress={addRound}
-              disabled={!canSave}
-              android_ripple={{ color: '#00000010' }}
-              style={{
-                height: 48,
-                borderRadius: 0,
-                backgroundColor: canSave ? BRAND : MID,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text style={{ color: '#fff', fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-                ADICIONAR ROUND
-              </Text>
-            </Pressable>
-          </View>
-        </View>
+        )}
 
         {/* Tabela de rounds */}
         <View style={{ marginTop: 18 }}>
@@ -464,7 +466,7 @@ export default function TournamentDetail() {
         </View>
       </ScrollView>
 
-      {/* ====== FIXO (sem scroll): Botões ====== */}
+      {/* FIXO: Botões */}
       <View style={{ padding: 16, paddingTop: 12 }}>
         <View style={{ gap: 10 }}>
           <Pressable
@@ -485,7 +487,6 @@ export default function TournamentDetail() {
             </Text>
           </Pressable>
 
-          {/* FINALIZAR / REABRIR */}
           <Pressable
             onPress={() => setFinishOpen(true)}
             android_ripple={{ color: (t as any).finalized ? '#00000010' : '#ffffff22' }}
@@ -513,7 +514,7 @@ export default function TournamentDetail() {
         </View>
       </View>
 
-      {/* MODAL de confirmação */}
+      {/* MODAL */}
       <Modal animationType="fade" transparent visible={finishOpen} onRequestClose={() => setFinishOpen(false)}>
         <View style={{ flex: 1, backgroundColor: '#00000055', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <View style={{ width: '100%', maxWidth: 420, backgroundColor: '#fff', borderWidth: 1, borderColor: LINE }}>
