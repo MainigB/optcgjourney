@@ -1,14 +1,14 @@
 // app/index.tsx
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, Pressable, FlatList } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { loadTournaments, Tournament, computeRecord } from '../state/app';
-import { UI, Card, Chip, DeckAvatar } from '../components/ui';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { AppLogo } from '../components/logo';
+import { Card, Chip, DeckAvatar, UI } from '../components/ui';
+import { computeRecord, loadTournaments, Tournament } from '../state/app';
 
 // >>> Fonts
-import { useFonts as useOswald, Oswald_400Regular } from '@expo-google-fonts/oswald';
-import { useFonts as useNoto, NotoSans_700Bold } from '@expo-google-fonts/noto-sans';
+import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
+import { Oswald_400Regular, useFonts as useOswald } from '@expo-google-fonts/oswald';
 
 function Tag({ label }: { label: string }) {
   return <Chip label={label} />;
@@ -17,7 +17,7 @@ function Tag({ label }: { label: string }) {
 // Layout consts
 const CARD_H = 96;
 const VISIBLE = 2.5;
-const LIST_MAX_H = CARD_H * VISIBLE;
+const LIST_MAX_H = (CARD_H + 8) * VISIBLE + 24; // 8px margin + 24px padding
 const BRAND = '#8E7D55';
 
 function TournamentCard({ t }: { t: Tournament }) {
@@ -32,7 +32,7 @@ function TournamentCard({ t }: { t: Tournament }) {
           flexDirection: 'row',
           alignItems: 'center',
           gap: 12,
-          marginBottom: 12,
+          marginBottom: 8,
           overflow: 'hidden',
         }}
       >
@@ -156,18 +156,48 @@ export default function Home() {
         </View>
 
         {recent.length === 0 ? (
-          <Text style={{ color: UI.color.sub, fontFamily: 'NotoSans_700Regular' }}>
-            Sem torneios ainda.
-          </Text>
+          <View style={{ height: 120, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ color: UI.color.sub, fontFamily: 'NotoSans_700Bold', fontSize: 16 }}>
+              Sem torneios ainda.
+            </Text>
+            <Text style={{ color: UI.color.sub, fontFamily: 'NotoSans_700Bold', fontSize: 14, marginTop: 4 }}>
+              Adicione seu primeiro torneio!
+            </Text>
+          </View>
         ) : (
-          <View style={{ width: '100%', maxHeight: LIST_MAX_H }}>
-            <FlatList
-              data={recent}
-              keyExtractor={(t) => t.id}
-              renderItem={({ item }) => <TournamentCard t={item} />}
-              contentContainerStyle={{ paddingTop: 8, paddingBottom: 8 }}
-              showsVerticalScrollIndicator
-            />
+          <View>
+            <View style={{ 
+              width: '100%', 
+              height: LIST_MAX_H,
+              backgroundColor: UI.color.card,
+              borderRadius: UI.radius.lg,
+              overflow: 'hidden',
+              borderWidth: 1,
+              borderColor: UI.color.line
+            }}>
+              <FlatList
+                data={recent}
+                keyExtractor={(t) => t.id}
+                renderItem={({ item }) => <TournamentCard t={item} />}
+                contentContainerStyle={{ padding: 12 }}
+                showsVerticalScrollIndicator={true}
+                bounces={false}
+                overScrollMode="never"
+                nestedScrollEnabled={true}
+                scrollEventThrottle={16}
+              />
+            </View>
+            {recent.length > 3 && (
+              <Text style={{ 
+                textAlign: 'center', 
+                color: UI.color.sub, 
+                fontFamily: 'NotoSans_700Bold', 
+                fontSize: 12, 
+                marginTop: 8 
+              }}>
+                Deslize para ver mais torneios
+              </Text>
+            )}
           </View>
         )}
       </View>
