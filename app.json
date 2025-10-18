@@ -34,6 +34,9 @@
       [
         "expo-splash-screen",
         {
+          "image": "./assets/images/op_tcg_icon_1024_ios.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": { 
             "backgroundColor": "#000000"

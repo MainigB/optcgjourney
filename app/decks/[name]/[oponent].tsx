@@ -1,7 +1,7 @@
 // app/decks/[name]/[opponent].tsx
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Card, DeckAvatar, UI } from '../../../components/ui';
 import { DECKS } from '../../../data/decks';
 import { deckKey, loadTournaments, Tournament } from '../../../state/app';
@@ -39,21 +39,21 @@ function StatPill({ label, w, l }: { label: string; w: number; l: number }) {
       borderColor: UI.color.line,
       backgroundColor: UI.color.card,
       borderRadius: UI.radius.lg,
-      padding: 12,
+      padding: 16,
     }}>
       <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 6 }}>{label}</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View style={{ alignItems: 'center', gap: 8 }}>
         <View style={{
-          width: 40, height: 40, borderRadius: 10,
+          width: 60, height: 60, borderRadius: 30,
           borderWidth: 3, borderColor: toneColor,
           backgroundColor: UI.color.ink,
           alignItems: 'center', justifyContent: 'center'
         }}>
-          <Text style={{ color: 'white', fontFamily: 'NotoSans_700Bold' }}>{total || 0}</Text>
+          <Text style={{ color: 'white', fontFamily: 'Oswald_400Regular', fontSize: 18 }}>{wr}%</Text>
         </View>
-        <View>
-          <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{w}-{l}</Text>
-          <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>{wr}% WR</Text>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16 }}>{w}-{l}</Text>
+          <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 12 }}>{total} partidas</Text>
         </View>
       </View>
     </View>
@@ -67,20 +67,20 @@ function MatrixCell({ title, w, l }: { title: string; w: number; l: number }) {
   const toneColor = w > l ? UI.color.ok : w < l ? UI.color.bad : UI.color.mid;
 
   return (
-    <Card style={{ flexBasis: '48%', padding: 12 }}>
-      <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 6 }}>{title}</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+    <Card style={{ flexBasis: '48%', padding: 16 }}>
+      <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 12, fontSize: 14 }}>{title}</Text>
+      <View style={{ alignItems: 'center', gap: 8 }}>
         <View style={{
-          width: 34, height: 34, borderRadius: 8,
+          width: 50, height: 50, borderRadius: 25,
           borderWidth: 3, borderColor: toneColor,
           backgroundColor: UI.color.ink,
           alignItems: 'center', justifyContent: 'center'
         }}>
-          <Text style={{ color: 'white', fontFamily: 'NotoSans_700Bold', fontSize: 12 }}>{total || 0}</Text>
+          <Text style={{ color: 'white', fontFamily: 'Oswald_400Regular', fontSize: 16 }}>{wr}%</Text>
         </View>
-        <View>
-          <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{w}-{l}</Text>
-          <Text style={{ color: SUB, fontSize: 12, fontFamily: 'NotoSans_700Bold' }}>{wr}% WR</Text>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 14 }}>{w}-{l}</Text>
+          <Text style={{ color: SUB, fontSize: 11, fontFamily: 'NotoSans_700Bold' }}>{total} partidas</Text>
         </View>
       </View>
     </Card>
@@ -89,16 +89,37 @@ function MatrixCell({ title, w, l }: { title: string; w: number; l: number }) {
 
 /* --- helper para obter o rótulo canônico a partir de uma key --- */
 function canonicalFromKey(k: string, fallback: string) {
-  const found = DECKS.find(d => deckKey(d) === k);
-  return found ?? fallback;
+  try {
+    if (!k || !DECKS) return fallback;
+    const found = DECKS.find(d => deckKey(d) === k);
+    return found ?? fallback;
+  } catch (error) {
+    console.warn('Error in canonicalFromKey:', error);
+    return fallback;
+  }
 }
 
 export default function MatchupDetail() {
   const params = useLocalSearchParams<{ name: string; opponent: string; oppk?: string; dek?: string }>();
+  
+  // Verificações de segurança
+  if (!params.name) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+        <Text style={{ fontFamily: 'NotoSans_700Bold', color: '#dc2626' }}>
+          Nome do deck não encontrado
+        </Text>
+        <Pressable onPress={() => router.back()} style={{ marginTop: 16, padding: 12, backgroundColor: BRAND, borderRadius: 8 }}>
+          <Text style={{ color: 'white', fontFamily: 'NotoSans_700Bold' }}>Voltar</Text>
+        </Pressable>
+      </View>
+    );
+  }
+  
   const deckNameParam = decodeURIComponent(params.name || '');
-  const opponentNameParam = decodeURIComponent(params.opponent || '');
+  const opponentNameParam = params.opponent ? decodeURIComponent(params.opponent) : '';
   const meKeyParam  = params.dek  ? String(params.dek)  : deckKey(deckNameParam);
-  const oppKeyParam = params.oppk ? String(params.oppk) : deckKey(opponentNameParam);
+  const oppKeyParam = params.oppk ? String(params.oppk) : (opponentNameParam ? deckKey(opponentNameParam) : '');
 
   const [all, setAll] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,32 +134,53 @@ export default function MatchupDetail() {
   })(); }, [params.name, params.opponent, params.dek, params.oppk]);
 
   const rounds = useMemo<RItem[]>(() => {
-    const out: RItem[] = [];
-    for (const t of all) {
-      if (deckKey(t.deck) !== meKeyParam) continue;
-      for (const r of t.rounds ?? []) {
-        if (deckKey(r.opponentLeader || '') !== oppKeyParam) continue;
-        out.push({
-          id: r.id, num: r.num, result: r.result, order: r.order, dice: r.dice,
-          tournamentId: t.id, tournamentName: t.name, tournamentDate: t.date
-        });
+    try {
+      const out: RItem[] = [];
+      if (!all || !Array.isArray(all)) return out;
+      
+      for (const t of all) {
+        if (!t || !t.deck) continue;
+        if (deckKey(t.deck) !== meKeyParam) continue;
+        if (!t.rounds || !Array.isArray(t.rounds)) continue;
+        
+        for (const r of t.rounds) {
+          if (!r || !r.opponentLeader) continue;
+          if (deckKey(r.opponentLeader || '') !== oppKeyParam) continue;
+          out.push({
+            id: r.id, num: r.num, result: r.result, order: r.order, dice: r.dice,
+            tournamentId: t.id, tournamentName: t.name, tournamentDate: t.date
+          });
+        }
       }
+      out.sort((a, b) => (b.tournamentDate - a.tournamentDate) || (a.num - b.num));
+      return out;
+    } catch (error) {
+      console.warn('Error in rounds useMemo:', error);
+      return [];
     }
-    out.sort((a, b) => (b.tournamentDate - a.tournamentDate) || (a.num - b.num));
-    return out;
   }, [all, meKeyParam, oppKeyParam]);
 
   /* Labels vindos dos dados + normalização para o rótulo canônico (bate imagem) */
   const myLabelFromData = useMemo(() => {
-    if (!rounds.length) return deckNameParam;
-    const t0 = all.find(t => t.id === rounds[0].tournamentId);
-    return t0?.deck ?? deckNameParam;
+    try {
+      if (!rounds.length || !Array.isArray(rounds)) return deckNameParam;
+      const t0 = all?.find(t => t?.id === rounds[0]?.tournamentId);
+      return t0?.deck ?? deckNameParam;
+    } catch (error) {
+      console.warn('Error in myLabelFromData:', error);
+      return deckNameParam;
+    }
   }, [all, rounds, deckNameParam]);
 
   const oppLabelFromData = useMemo(() => {
-    if (!rounds.length) return opponentNameParam;
-    // se precisar, poderíamos decidir pelo mais frequente; primeiro round costuma bastar
-    return (rounds as any)[0]?.opponentLeader ?? opponentNameParam;
+    try {
+      if (!rounds.length || !Array.isArray(rounds)) return opponentNameParam;
+      // se precisar, poderíamos decidir pelo mais frequente; primeiro round costuma bastar
+      return rounds[0]?.opponentLeader ?? opponentNameParam;
+    } catch (error) {
+      console.warn('Error in oppLabelFromData:', error);
+      return opponentNameParam;
+    }
   }, [rounds, opponentNameParam]);
 
   // Rótulos canônicos (garante mapeamento de imagem correto e exibição consistente)
@@ -146,36 +188,71 @@ export default function MatchupDetail() {
   const oppDisplay = useMemo(() => canonicalFromKey(oppKeyParam, oppLabelFromData), [oppKeyParam, oppLabelFromData]);
 
   const splits = useMemo(() => {
-    let w = 0, l = 0;
-    let o1w = 0, o1l = 0, o2w = 0, o2l = 0;
-    let dw = 0, dl = 0, lw = 0, ll = 0;
-    let fWonW = 0, fWonL = 0, fLostW = 0, fLostL = 0;
-    let sWonW = 0, sWonL = 0, sLostW = 0, sLostL = 0;
+    try {
+      let w = 0, l = 0;
+      let o1w = 0, o1l = 0, o2w = 0, o2l = 0;
+      let dw = 0, dl = 0, lw = 0, ll = 0;
+      let fWonW = 0, fWonL = 0, fLostW = 0, fLostL = 0;
+      let sWonW = 0, sWonL = 0, sLostW = 0, sLostL = 0;
 
-    for (const r of rounds) {
-      r.result === 'win' ? w++ : l++;
-      if (r.order === 'first') (r.result === 'win' ? o1w++ : o1l++); else if (r.order === 'second') (r.result === 'win' ? o2w++ : o2l++);
-      if (r.dice === 'won')  (r.result === 'win' ? dw++ : dl++);
-      if (r.dice === 'lost') (r.result === 'win' ? lw++ : ll++);
-      if (r.order === 'first'  && r.dice === 'won')  (r.result === 'win' ? fWonW++  : fWonL++);
-      if (r.order === 'first'  && r.dice === 'lost') (r.result === 'win' ? fLostW++ : fLostL++);
-      if (r.order === 'second' && r.dice === 'won')  (r.result === 'win' ? sWonW++  : sWonL++);
-      if (r.order === 'second' && r.dice === 'lost') (r.result === 'win' ? sLostW++ : sLostL++);
+      if (!rounds || !Array.isArray(rounds)) {
+        return {
+          total: pack(0, 0),
+          orderFirst: pack(0, 0),
+          orderSecond: pack(0, 0),
+          diceWon: pack(0, 0),
+          diceLost: pack(0, 0),
+          matrix: {
+            firstWon: pack(0, 0),
+            firstLost: pack(0, 0),
+            secondWon: pack(0, 0),
+            secondLost: pack(0, 0),
+          },
+        };
+      }
+
+      for (const r of rounds) {
+        if (!r || !r.result) continue;
+        
+        r.result === 'win' ? w++ : l++;
+        if (r.order === 'first') (r.result === 'win' ? o1w++ : o1l++); else if (r.order === 'second') (r.result === 'win' ? o2w++ : o2l++);
+        if (r.dice === 'won')  (r.result === 'win' ? dw++ : dl++);
+        if (r.dice === 'lost') (r.result === 'win' ? lw++ : ll++);
+        if (r.order === 'first'  && r.dice === 'won')  (r.result === 'win' ? fWonW++  : fWonL++);
+        if (r.order === 'first'  && r.dice === 'lost') (r.result === 'win' ? fLostW++ : fLostL++);
+        if (r.order === 'second' && r.dice === 'won')  (r.result === 'win' ? sWonW++  : sWonL++);
+        if (r.order === 'second' && r.dice === 'lost') (r.result === 'win' ? sLostW++ : sLostL++);
+      }
+
+      return {
+        total:       pack(w, l),
+        orderFirst:  pack(o1w, o1l),
+        orderSecond: pack(o2w, o2l),
+        diceWon:     pack(dw, dl),
+        diceLost:    pack(lw, ll),
+        matrix: {
+          firstWon:   pack(fWonW, fWonL),
+          firstLost:  pack(fLostW, fLostL),
+          secondWon:  pack(sWonW, sWonL),
+          secondLost: pack(sLostW, sLostL),
+        },
+      };
+    } catch (error) {
+      console.warn('Error in splits useMemo:', error);
+      return {
+        total: pack(0, 0),
+        orderFirst: pack(0, 0),
+        orderSecond: pack(0, 0),
+        diceWon: pack(0, 0),
+        diceLost: pack(0, 0),
+        matrix: {
+          firstWon: pack(0, 0),
+          firstLost: pack(0, 0),
+          secondWon: pack(0, 0),
+          secondLost: pack(0, 0),
+        },
+      };
     }
-
-    return {
-      total:       pack(w, l),
-      orderFirst:  pack(o1w, o1l),
-      orderSecond: pack(o2w, o2l),
-      diceWon:     pack(dw, dl),
-      diceLost:    pack(lw, ll),
-      matrix: {
-        firstWon:   pack(fWonW, fWonL),
-        firstLost:  pack(fLostW, fLostL),
-        secondWon:  pack(sWonW, sWonL),
-        secondLost: pack(sLostW, sLostL),
-      },
-    };
   }, [rounds]);
 
   if (!oswaldLoaded || !notoLoaded || loading) {
@@ -197,7 +274,7 @@ export default function MatchupDetail() {
             <Text style={{ fontSize: 48, color: BRAND }}>←</Text>
           </Pressable>
           <Text style={{ fontSize: 22, color: INK, fontFamily: 'Oswald_400Regular', letterSpacing: 0.3, flex: 1 }}>
-            Matchup — {deckNameParam} vs {opponentNameParam}
+            {opponentNameParam ? `Matchup — ${deckNameParam} vs ${opponentNameParam}` : `Matchup — ${deckNameParam}`}
           </Text>
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
@@ -216,61 +293,57 @@ export default function MatchupDetail() {
         overScrollMode="never"
         showsVerticalScrollIndicator
       >
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: 16 }}>
         <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ flex: 1, alignItems: 'center', gap: 8 }}>
-              <DeckAvatar label={myDisplay} tone={myTone} size={78} imgShiftY={10} />
-              <View style={{ alignItems: 'center', maxWidth: 140 }}>
-                <Text style={{ color: SUB, marginBottom: 2, fontFamily: 'NotoSans_700Bold' }}>Você</Text>
-                <Text style={{ fontSize: 15, fontFamily: 'NotoSans_700Bold', textAlign: 'center' }} numberOfLines={2}>{deckNameParam}</Text>
-              </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+            {/* Seu Líder */}
+            <View style={{ alignItems: 'center', gap: 8 }}>
+              <DeckAvatar label={myDisplay} tone={myTone} size={100} imgShiftY={10} />
+              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 12 }}>Seu Líder</Text>
+              <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 14, textAlign: 'center' }} numberOfLines={2}>{myDisplay}</Text>
             </View>
 
-            {/* Centro */}
-            <View style={{ width: 64, alignItems: 'center', gap: 6 }}>
+            {/* VS */}
+            <View style={{ alignItems: 'center', gap: 8 }}>
               <View style={{
-                width: 36, height: 36, borderRadius: 18,
+                width: 50, height: 50, borderRadius: 25,
                 backgroundColor: UI.color.ink, alignItems: 'center', justifyContent: 'center'
               }}>
-                <Text style={{ color: 'white', fontFamily: 'NotoSans_700Bold' }}>vs</Text>
+                <Text style={{ color: 'white', fontFamily: 'Oswald_400Regular', fontSize: 18 }}>VS</Text>
               </View>
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'NotoSans_700Bold' }}>
+                <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16 }}>
                   {splits.total.wins}-{splits.total.losses}
                 </Text>
-                <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>{splits.total.wr}% WR</Text>
+                <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 12 }}>{splits.total.wr}% WR</Text>
               </View>
             </View>
 
-            {/* Oponente */}
-            <View style={{ flex: 1, alignItems: 'center', gap: 8 }}>
-              <DeckAvatar label={oppDisplay} tone={oppTone} size={78} imgShiftY={10} />
-              <View style={{ alignItems: 'center', maxWidth: 140 }}>
-                <Text style={{ color: SUB, marginBottom: 2, fontFamily: 'NotoSans_700Bold' }}>Oponente</Text>
-                {/* <- Text explícito com o nome do deck do oponente */}
-                <Text style={{ fontSize: 15, fontFamily: 'NotoSans_700Bold', textAlign: 'center' }} numberOfLines={2}>{oppDisplay}</Text>
-              </View>
+            {/* Líder Oponente */}
+            <View style={{ alignItems: 'center', gap: 8 }}>
+              <DeckAvatar label={oppDisplay || 'Unknown'} tone={oppTone} size={100} imgShiftY={10} />
+              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 12 }}>Líder Oponente</Text>
+              <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 14, textAlign: 'center' }} numberOfLines={2}>{oppDisplay || 'Unknown'}</Text>
             </View>
           </View>
         </Card>
 
         {/* ===== Ordem ===== */}
-        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Ordem</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>Ordem</Text>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <StatPill label="1️⃣ First"  w={splits.orderFirst.wins}  l={splits.orderFirst.losses} />
           <StatPill label="2️⃣ Second" w={splits.orderSecond.wins} l={splits.orderSecond.losses} />
         </View>
 
         {/* ===== Dado ===== */}
-        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Dado</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>Dado</Text>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <StatPill label="🎲 Won"  w={splits.diceWon.wins}  l={splits.diceWon.losses} />
           <StatPill label="🎲 Lost" w={splits.diceLost.wins} l={splits.diceLost.losses} />
         </View>
 
         {/* ===== Matriz (Ordem × Dado) — 2x2 compacto ===== */}
-        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Matriz (Ordem × Dado)</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>Matriz (Ordem × Dado)</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
           <MatrixCell title="1️⃣ + 🎲 Won"  w={splits.matrix.firstWon.wins}  l={splits.matrix.firstWon.losses} />
           <MatrixCell title="1️⃣ + 🎲 Lost" w={splits.matrix.firstLost.wins} l={splits.matrix.firstLost.losses} />
@@ -279,16 +352,13 @@ export default function MatchupDetail() {
         </View>
 
         {/* ===== Partidas ===== */}
-        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Partidas</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>Partidas</Text>
         {rounds.length === 0 ? (
           <Card><Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>Sem partidas ainda contra este deck.</Text></Card>
         ) : (
-          <FlatList
-            data={rounds}
-            keyExtractor={(r) => r.id}
-            contentContainerStyle={{ paddingBottom: 24 }}
-            renderItem={({ item }) => (
-              <Pressable onPress={() => router.push(`/t/${item.tournamentId}`)} android_ripple={{ color: '#00000010' }} style={{ marginBottom: 12 }}>
+          <View style={{ paddingBottom: 24 }}>
+            {rounds.map((item) => (
+              <Pressable key={item.id} onPress={() => router.push(`/t/${item.tournamentId}`)} android_ripple={{ color: '#00000010' }} style={{ marginBottom: 12 }}>
                 <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: UI.color.ink, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                     <Text style={{ color: 'white', fontWeight: '800' }}>{item.num}</Text>
@@ -304,8 +374,8 @@ export default function MatchupDetail() {
                   </Text>
                 </Card>
               </Pressable>
-            )}
-          />
+            ))}
+          </View>
         )}
         </View>
       </ScrollView>
