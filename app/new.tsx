@@ -1,14 +1,14 @@
 // app/new.tsx
-import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, Pressable, FlatList, Keyboard } from 'react-native';
 import { router } from 'expo-router';
-import { makeTournament, loadTournaments, saveTournaments } from '../state/app';
+import React, { useMemo, useState } from 'react';
+import { FlatList, Keyboard, Pressable, Text, TextInput, View } from 'react-native';
+import { Card, UI } from '../components/ui';
 import { DECKS } from '../data/decks';
-import { UI, Card } from '../components/ui';
+import { loadTournaments, makeTournament, saveTournaments } from '../state/app';
 
 // Fonts (mesmo padrão da Home)
-import { useFonts as useOswald, Oswald_400Regular } from '@expo-google-fonts/oswald';
-import { useFonts as useNoto, NotoSans_700Bold } from '@expo-google-fonts/noto-sans';
+import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
+import { Oswald_400Regular, useFonts as useOswald } from '@expo-google-fonts/oswald';
 
 const BRAND = '#8E7D55';
 const normalize = (s: string) =>
@@ -88,19 +88,24 @@ export default function NewTournament() {
 
   return (
     <View style={{ flex: 1, backgroundColor: UI.color.bg }}>
-      {/* TÍTULO */}
-      <View style={{ paddingTop: 28 }}>
-        <Text
-          style={{
-            fontSize: 28,
-            textAlign: 'left',
-            color: UI.color.ink,
-            fontFamily: 'Oswald_400Regular',
-            letterSpacing: 0.5,
-          }}
-        >
-          Adicionar torneio
-        </Text>
+      <View style={{ paddingTop: 28, paddingHorizontal: 16, paddingBottom: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
+            <Text style={{ fontSize: 48, color: BRAND }}>←</Text>
+          </Pressable>
+          <Text
+            style={{
+              fontSize: 28,
+              color: UI.color.ink,
+              fontFamily: 'Oswald_400Regular',
+              letterSpacing: 0.5,
+              flex: 1,
+            }}
+          >
+            Adicionar torneio
+          </Text>
+        </View>
+        <View style={{ height: 1, backgroundColor: UI.color.line, position: 'absolute', left: 16, right: 16, bottom: 0 }} />
       </View>
 
       {/* FORM */}
@@ -163,6 +168,12 @@ export default function NewTournament() {
                 keyboardShouldPersistTaps="handled"
                 data={deckOptions}
                 keyExtractor={(s) => s}
+                showsVerticalScrollIndicator
+                bounces={false}
+                overScrollMode="never"
+                style={{ maxHeight: 200 }}
+                nestedScrollEnabled={true}
+                scrollEventThrottle={16}
                 renderItem={({ item }) => (
                   <Pressable
                     onPress={() => {

@@ -11,7 +11,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ginithekid.optcgtracker",
-      "infoPlist": { "ITSAppUsesNonExemptEncryption": false }
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -32,19 +34,24 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/op_tcg_icon_1024_ios.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
           "backgroundColor": "#ffffff",
-          "dark": { "backgroundColor": "#000000" }
+          "dark": { 
+            "backgroundColor": "#000000"
+          }
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
-    "experiments": { "typedRoutes": true, "reactCompiler": true },
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
     "extra": {
       "router": {},
-      "eas": { "projectId": "c221e52b-50cb-49ff-bddb-49c984c453ff" }
+      "eas": {
+        "projectId": "c221e52b-50cb-49ff-bddb-49c984c453ff"
+      }
     }
   }
 }

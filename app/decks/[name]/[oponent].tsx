@@ -1,10 +1,18 @@
 // app/decks/[name]/[opponent].tsx
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, Pressable } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { loadTournaments, Tournament, deckKey } from '../../../state/app';
+import { FlatList, Pressable, Text, View } from 'react-native';
+import { Card, DeckAvatar, UI } from '../../../components/ui';
 import { DECKS } from '../../../data/decks';
-import { HeaderBar, UI, Card, DeckAvatar } from '../../../components/ui';
+import { deckKey, loadTournaments, Tournament } from '../../../state/app';
+
+import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
+import { Oswald_400Regular, useFonts as useOswald } from '@expo-google-fonts/oswald';
+
+const BRAND = '#8E7D55';
+const INK = UI?.color?.ink ?? '#0f172a';
+const SUB = UI?.color?.sub ?? '#64748b';
+const LINE = UI?.color?.line ?? '#e5e7eb';
 
 type RItem = {
   id: string;
@@ -33,7 +41,7 @@ function StatPill({ label, w, l }: { label: string; w: number; l: number }) {
       borderRadius: UI.radius.lg,
       padding: 12,
     }}>
-      <Text style={{ fontWeight: '800', marginBottom: 6 }}>{label}</Text>
+      <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 6 }}>{label}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <View style={{
           width: 40, height: 40, borderRadius: 10,
@@ -41,11 +49,11 @@ function StatPill({ label, w, l }: { label: string; w: number; l: number }) {
           backgroundColor: UI.color.ink,
           alignItems: 'center', justifyContent: 'center'
         }}>
-          <Text style={{ color: 'white', fontWeight: '800' }}>{total || 0}</Text>
+          <Text style={{ color: 'white', fontFamily: 'NotoSans_700Bold' }}>{total || 0}</Text>
         </View>
         <View>
-          <Text style={{ fontWeight: '900' }}>{w}-{l}</Text>
-          <Text style={{ color: UI.color.sub }}>{wr}% WR</Text>
+          <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{w}-{l}</Text>
+          <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>{wr}% WR</Text>
         </View>
       </View>
     </View>
@@ -60,7 +68,7 @@ function MatrixCell({ title, w, l }: { title: string; w: number; l: number }) {
 
   return (
     <Card style={{ flexBasis: '48%', padding: 12 }}>
-      <Text style={{ fontWeight: '700', marginBottom: 6 }}>{title}</Text>
+      <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 6 }}>{title}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <View style={{
           width: 34, height: 34, borderRadius: 8,
@@ -68,11 +76,11 @@ function MatrixCell({ title, w, l }: { title: string; w: number; l: number }) {
           backgroundColor: UI.color.ink,
           alignItems: 'center', justifyContent: 'center'
         }}>
-          <Text style={{ color: 'white', fontWeight: '800', fontSize: 12 }}>{total || 0}</Text>
+          <Text style={{ color: 'white', fontFamily: 'NotoSans_700Bold', fontSize: 12 }}>{total || 0}</Text>
         </View>
         <View>
-          <Text style={{ fontWeight: '800' }}>{w}-{l}</Text>
-          <Text style={{ color: UI.color.sub, fontSize: 12 }}>{wr}% WR</Text>
+          <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{w}-{l}</Text>
+          <Text style={{ color: SUB, fontSize: 12, fontFamily: 'NotoSans_700Bold' }}>{wr}% WR</Text>
         </View>
       </View>
     </Card>
@@ -94,6 +102,9 @@ export default function MatchupDetail() {
 
   const [all, setAll] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [oswaldLoaded] = useOswald({ Oswald_400Regular });
+  const [notoLoaded] = useNoto({ NotoSans_700Bold });
 
   useEffect(() => { (async () => {
     setLoading(true);
@@ -167,27 +178,52 @@ export default function MatchupDetail() {
     };
   }, [rounds]);
 
-  if (loading) {
-    return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><Text>Carregando…</Text></View>;
+  if (!oswaldLoaded || !notoLoaded || loading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Carregando…</Text>
+      </View>
+    );
   }
 
   const myTone: 'ok'|'bad'|'mid' = splits.total.wins > splits.total.losses ? 'ok' : splits.total.wins < splits.total.losses ? 'bad' : 'mid';
   const oppTone: 'ok'|'bad'|'mid' = myTone === 'ok' ? 'bad' : myTone === 'bad' ? 'ok' : 'mid';
 
   return (
-    <View style={{ flex: 1, backgroundColor: UI.color.bg }}>
-      <HeaderBar title="Matchup" onLeftPress={() => router.back()} />
-      <View style={{ padding: 16, gap: 12, flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <View style={{ padding: 16, paddingBottom: 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
+            <Text style={{ fontSize: 48, color: BRAND }}>←</Text>
+          </Pressable>
+          <Text style={{ fontSize: 22, color: INK, fontFamily: 'Oswald_400Regular', letterSpacing: 0.3, flex: 1 }}>
+            Matchup — {deckNameParam} vs {opponentNameParam}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
+          <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
+            {rounds.length} partida(s) · {splits.total.wr}% WR
+          </Text>
+          <View style={{ height: 1, backgroundColor: LINE, position: 'absolute', left: 0, right: 0, bottom: 0 }} />
+        </View>
+      </View>
 
-        {/* ===== Cabeçalho com os dois decks (labels canônicos) ===== */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingTop: 8, paddingBottom: 16 }}
+        bounces={false}
+        alwaysBounceVertical={false}
+        overScrollMode="never"
+        showsVerticalScrollIndicator
+      >
+        <View style={{ gap: 12 }}>
         <Card>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {/* Seu lado */}
             <View style={{ flex: 1, alignItems: 'center', gap: 8 }}>
               <DeckAvatar label={myDisplay} tone={myTone} size={78} imgShiftY={10} />
               <View style={{ alignItems: 'center', maxWidth: 140 }}>
-                <Text style={{ color: UI.color.sub, marginBottom: 2 }}>Você</Text>
-                <Text style={{ fontSize: 15, fontWeight: '900', textAlign: 'center' }} numberOfLines={2}>{deckNameParam}</Text>
+                <Text style={{ color: SUB, marginBottom: 2, fontFamily: 'NotoSans_700Bold' }}>Você</Text>
+                <Text style={{ fontSize: 15, fontFamily: 'NotoSans_700Bold', textAlign: 'center' }} numberOfLines={2}>{deckNameParam}</Text>
               </View>
             </View>
 
@@ -197,13 +233,13 @@ export default function MatchupDetail() {
                 width: 36, height: 36, borderRadius: 18,
                 backgroundColor: UI.color.ink, alignItems: 'center', justifyContent: 'center'
               }}>
-                <Text style={{ color: 'white', fontWeight: '900' }}>vs</Text>
+                <Text style={{ color: 'white', fontFamily: 'NotoSans_700Bold' }}>vs</Text>
               </View>
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontWeight: '900' }}>
+                <Text style={{ fontFamily: 'NotoSans_700Bold' }}>
                   {splits.total.wins}-{splits.total.losses}
                 </Text>
-                <Text style={{ color: UI.color.sub }}>{splits.total.wr}% WR</Text>
+                <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>{splits.total.wr}% WR</Text>
               </View>
             </View>
 
@@ -211,30 +247,30 @@ export default function MatchupDetail() {
             <View style={{ flex: 1, alignItems: 'center', gap: 8 }}>
               <DeckAvatar label={oppDisplay} tone={oppTone} size={78} imgShiftY={10} />
               <View style={{ alignItems: 'center', maxWidth: 140 }}>
-                <Text style={{ color: UI.color.sub, marginBottom: 2 }}>Oponente</Text>
+                <Text style={{ color: SUB, marginBottom: 2, fontFamily: 'NotoSans_700Bold' }}>Oponente</Text>
                 {/* <- Text explícito com o nome do deck do oponente */}
-                <Text style={{ fontSize: 15, fontWeight: '900', textAlign: 'center' }} numberOfLines={2}>{oppDisplay}</Text>
+                <Text style={{ fontSize: 15, fontFamily: 'NotoSans_700Bold', textAlign: 'center' }} numberOfLines={2}>{oppDisplay}</Text>
               </View>
             </View>
           </View>
         </Card>
 
         {/* ===== Ordem ===== */}
-        <Text style={{ fontWeight: '800' }}>Ordem</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Ordem</Text>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <StatPill label="1️⃣ First"  w={splits.orderFirst.wins}  l={splits.orderFirst.losses} />
           <StatPill label="2️⃣ Second" w={splits.orderSecond.wins} l={splits.orderSecond.losses} />
         </View>
 
         {/* ===== Dado ===== */}
-        <Text style={{ fontWeight: '800' }}>Dado</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Dado</Text>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <StatPill label="🎲 Won"  w={splits.diceWon.wins}  l={splits.diceWon.losses} />
           <StatPill label="🎲 Lost" w={splits.diceLost.wins} l={splits.diceLost.losses} />
         </View>
 
         {/* ===== Matriz (Ordem × Dado) — 2x2 compacto ===== */}
-        <Text style={{ fontWeight: '800' }}>Matriz (Ordem × Dado)</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Matriz (Ordem × Dado)</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
           <MatrixCell title="1️⃣ + 🎲 Won"  w={splits.matrix.firstWon.wins}  l={splits.matrix.firstWon.losses} />
           <MatrixCell title="1️⃣ + 🎲 Lost" w={splits.matrix.firstLost.wins} l={splits.matrix.firstLost.losses} />
@@ -243,9 +279,9 @@ export default function MatchupDetail() {
         </View>
 
         {/* ===== Partidas ===== */}
-        <Text style={{ fontWeight: '800' }}>Partidas</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Partidas</Text>
         {rounds.length === 0 ? (
-          <Card><Text style={{ color: UI.color.sub }}>Sem partidas ainda contra este deck.</Text></Card>
+          <Card><Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>Sem partidas ainda contra este deck.</Text></Card>
         ) : (
           <FlatList
             data={rounds}
@@ -258,12 +294,12 @@ export default function MatchupDetail() {
                     <Text style={{ color: 'white', fontWeight: '800' }}>{item.num}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontWeight: '700' }}>{item.tournamentName}</Text>
-                    <Text style={{ color: UI.color.sub }}>
+                    <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{item.tournamentName}</Text>
+                    <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
                       {new Date(item.tournamentDate).toLocaleDateString()} · {item.order === 'first' ? '1º' : '2º'} · {item.dice === 'won' ? 'dice ✓' : item.dice === 'lost' ? 'dice ✗' : 'dice -'}
                     </Text>
                   </View>
-                  <Text style={{ fontWeight: '900', color: item.result === 'win' ? UI.color.ok : UI.color.bad }}>
+                  <Text style={{ fontFamily: 'NotoSans_700Bold', color: item.result === 'win' ? UI.color.ok : UI.color.bad }}>
                     {item.result === 'win' ? 'W' : 'L'}
                   </Text>
                 </Card>
@@ -271,6 +307,27 @@ export default function MatchupDetail() {
             )}
           />
         )}
+        </View>
+      </ScrollView>
+
+      <View style={{ padding: 16, paddingTop: 12 }}>
+        <Pressable
+          onPress={() => router.back()}
+          android_ripple={{ color: '#00000010' }}
+          style={{
+            height: 48,
+            borderRadius: 0,
+            backgroundColor: '#fff',
+            borderWidth: 1,
+            borderColor: BRAND,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ color: BRAND, fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
+            VOLTAR
+          </Text>
+        </Pressable>
       </View>
     </View>
   );

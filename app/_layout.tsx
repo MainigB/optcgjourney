@@ -1,13 +1,19 @@
 // app/_layout.tsx
 import { Stack } from 'expo-router';
-import React from 'react';
+import { useState } from 'react';
+import { StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'react-native';
+import { CustomSplash } from '../components/custom-splash';
 import { UI } from '../components/ui';
 
 function InnerStack() {
   const insets = useSafeAreaInsets();
+  const [splashFinished, setSplashFinished] = useState(false);
+
+  if (!splashFinished) {
+    return <CustomSplash onFinish={() => setSplashFinished(true)} />;
+  }
 
   return (
     <>

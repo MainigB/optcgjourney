@@ -1,24 +1,23 @@
 // app/t/[id].tsx
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert, ScrollView, Modal } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import {
-  loadTournaments,
-  addRoundToTournament,
-  removeRound,
-  setTournamentFinalized,
-  Tournament,
-  Round,
-  computeRecord,
-  Dice,
-  Order,
-  Result,
-} from '../../state/app';
+import { Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { DeckAvatar, UI } from '../../components/ui';
 import { DECKS } from '../../data/decks';
-import { UI, DeckAvatar } from '../../components/ui';
+import {
+    addRoundToTournament,
+    computeRecord,
+    Dice,
+    loadTournaments,
+    Order,
+    Result,
+    Round,
+    setTournamentFinalized,
+    Tournament
+} from '../../state/app';
 
-import { useFonts as useOswald, Oswald_400Regular } from '@expo-google-fonts/oswald';
-import { useFonts as useNoto, NotoSans_700Bold } from '@expo-google-fonts/noto-sans';
+import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
+import { Oswald_400Regular, useFonts as useOswald } from '@expo-google-fonts/oswald';
 
 const BRAND = '#8E7D55';
 const INK = UI?.color?.ink ?? '#0f172a';
@@ -285,6 +284,8 @@ export default function TournamentDetail() {
         alwaysBounceVertical={false}
         overScrollMode="never"
         showsVerticalScrollIndicator
+        scrollEventThrottle={16}
+        nestedScrollEnabled={true}
       >
         {/* Aviso de bloqueio */}
         {(t as any).finalized ? (
@@ -349,15 +350,24 @@ export default function TournamentDetail() {
                     top: 46,
                     left: 0,
                     right: 0,
-                    maxHeight: 240,
+                    maxHeight: 260,
                     borderWidth: 1,
                     borderColor: LINE,
                     borderTopWidth: 0,
                     backgroundColor: '#fff',
                     zIndex: 10,
+                    overflow: 'hidden',
                   }}
                 >
-                  <ScrollView keyboardShouldPersistTaps="handled">
+                  <ScrollView 
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator
+                    bounces={false}
+                    overScrollMode="never"
+                    style={{ maxHeight: 200 }}
+                    nestedScrollEnabled={true}
+                    scrollEventThrottle={16}
+                  >
                     {oppOptions.map((item) => (
                       <Pressable
                         key={item}
