@@ -370,3 +370,15 @@ export async function setTournamentFinalized(tournamentId: string, finalized: bo
   await saveTournaments(next);
   return nextT;
 }
+
+// ---- Deletar torneio ----
+export async function deleteTournament(tournamentId: string): Promise<boolean> {
+  const list = await loadTournaments();
+  const filtered = list.filter(t => t.id !== tournamentId);
+  
+  // Retorna true se realmente deletou algo
+  if (filtered.length === list.length) return false;
+  
+  await saveTournaments(filtered);
+  return true;
+}
