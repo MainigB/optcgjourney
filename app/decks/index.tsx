@@ -38,10 +38,10 @@ export default function DecksList() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* HEADER fixo */}
-      <View style={{ paddingBottom: 0 }}>
+      <View style={{ paddingBottom: 0, paddingHorizontal: 16 }}>
         <ScreenHeader title="Seus Decks" onBack={() => router.back()} brandColor={BRAND} />
 
-        <View style={{ paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
             {agg.length} deck(s)
           </Text>

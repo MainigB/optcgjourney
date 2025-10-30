@@ -60,10 +60,10 @@ export default function DeckProfile() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* HEADER fixo */}
-      <View style={{ paddingBottom: 0 }}>
+      <View style={{ paddingBottom: 0, paddingHorizontal: 16 }}>
         <ScreenHeader title="Perfil do Deck" onBack={() => router.back()} brandColor={BRAND} />
 
-        <View style={{ paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
             {tournaments} torneio(s) · {totalRounds} partida(s) · {wr}% WR
           </Text>

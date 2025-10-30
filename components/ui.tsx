@@ -1,4 +1,5 @@
 // components/ui.tsx
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Image, Platform, Pressable, Text, View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -50,8 +51,13 @@ export function ScreenHeader({
   return (
     <View style={{ paddingTop, paddingHorizontal: 16, paddingBottom: 8 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-        <Pressable onPress={onBack} hitSlop={12} style={{ paddingRight: 8, transform: [{ translateY: -8 }] }}>
-          <Text style={{ fontSize: 48, color: brandColor }}>←</Text>
+        <Pressable
+          onPress={onBack}
+          hitSlop={16}
+          android_ripple={{ color: '#00000010', borderless: true }}
+          style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: 4, marginLeft: -8 }}
+        >
+          <Ionicons name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} size={30} color={brandColor} />
         </Pressable>
         <Text
           style={{

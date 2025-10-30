@@ -269,9 +269,9 @@ export default function MatchupDetail() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={{ paddingBottom: 0 }}>
+      <View style={{ paddingBottom: 0, paddingHorizontal: 16 }}>
         <ScreenHeader title={opponentNameParam ? `Matchup — ${deckNameParam} vs ${opponentNameParam}` : `Matchup — ${deckNameParam}`} onBack={() => router.back()} brandColor={BRAND} />
-        <View style={{ paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
             {rounds.length} partida(s) · {splits.total.wr}% WR
           </Text>
@@ -289,12 +289,12 @@ export default function MatchupDetail() {
       >
         <View style={{ gap: 16 }}>
         <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: -15 }}>
             {/* Seu Líder */}
             <View style={{ alignItems: 'center', gap: 8 }}>
               <DeckAvatar label={myDisplay} tone={myTone} size={100} imgShiftY={10} />
-              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 12 }}>Seu Líder</Text>
-              <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 14, textAlign: 'center' }} numberOfLines={2}>{myDisplay}</Text>
+              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 11 }}>Seu Líder</Text>
+              <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 12, textAlign: 'center' }} numberOfLines={2}>{myDisplay}</Text>
             </View>
 
             {/* VS */}
@@ -316,8 +316,8 @@ export default function MatchupDetail() {
             {/* Líder Oponente */}
             <View style={{ alignItems: 'center', gap: 8 }}>
               <DeckAvatar label={oppDisplay || 'Unknown'} tone={oppTone} size={100} imgShiftY={10} />
-              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 12 }}>Líder Oponente</Text>
-              <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 14, textAlign: 'center' }} numberOfLines={2}>{oppDisplay || 'Unknown'}</Text>
+              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 11 }}>Líder Oponente</Text>
+              <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 12, textAlign: 'center' }} numberOfLines={2}>{oppDisplay || 'Unknown'}</Text>
             </View>
           </View>
         </Card>

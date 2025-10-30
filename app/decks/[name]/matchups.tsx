@@ -45,9 +45,9 @@ export default function DeckMatchupsList() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* HEADER */}
-      <View style={{ paddingBottom: 0 }}>
+      <View style={{ paddingBottom: 0, paddingHorizontal: 16 }}>
         <ScreenHeader title={`Matchups — ${deckName}`} onBack={() => router.back()} brandColor={BRAND} />
-        <View style={{ paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
             {matchups.length} oponente(s)
           </Text>
