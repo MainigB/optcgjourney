@@ -239,11 +239,11 @@ export default function TournamentDetail() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* FIXO: Header + Deck */}
-      <View style={{ flexShrink: 0, paddingBottom: 0 }}>
+      <View style={{ flexShrink: 0, paddingBottom: 0, paddingHorizontal: 16 }}>
         {/* HEADER */}
         <ScreenHeader title={t.name} onBack={() => router.back()} brandColor={BRAND} />
 
-        <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
+        <View style={{ marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
               Resultado {rec.wins}-{rec.losses}
