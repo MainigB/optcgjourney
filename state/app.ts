@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 
 export type Dice = 'won' | 'lost' | 'none';
 export type Order = 'first' | 'second';
@@ -11,6 +12,7 @@ export interface Round {
   dice: Dice;
   order: Order;
   result: Result;
+  isBye?: boolean; // round de BYE: conta no placar, mas não em estatísticas/aggregações
 }
 
 export interface Tournament {
@@ -26,7 +28,20 @@ export interface Tournament {
   finalized?: boolean; // <- NOVO: quando true, bloqueia adição de rounds
 }
 
-const K_TOURNAMENTS = 'tournaments';
+const K_TOURNAMENTS = 'tournaments'; // legado (sem compressão)
+const K_TOURNAMENTS_V2 = 'tournaments_v2_utf16'; // novo (com compressão)
+
+function serializeCompressed(obj: unknown): string {
+  const json = JSON.stringify(obj);
+  return compressToUTF16(json);
+}
+
+function deserializeCompressed(payload: string | null): unknown {
+  if (!payload) return null;
+  const json = decompressFromUTF16(payload);
+  if (!json) return null;
+  return JSON.parse(json);
+}
 
 // ---------------- Normalização / Coerção ----------------
 export function wrPercent(wins: number, losses: number) {
@@ -107,14 +122,39 @@ function sanitizeRound(r: any, idx: number): Round {
     order,
     dice,
     result,
+    isBye: Boolean(r.isBye) || false,
   };
 }
 
 // ---------------- Persistência ----------------
 export async function loadTournaments(): Promise<Tournament[]> {
   try {
-    const v = await AsyncStorage.getItem(K_TOURNAMENTS);
-    const raw = v ? (JSON.parse(v) as Tournament[]) : [];
+    // 1) tenta formato comprimido (v2)
+    const v2 = await AsyncStorage.getItem(K_TOURNAMENTS_V2);
+    if (v2) {
+      const parsed = (deserializeCompressed(v2) as Tournament[] | null) || [];
+      const migrated = parsed.map((t, i) => {
+        const rounds = (t.rounds ?? []).map(sanitizeRound);
+        const rec = computeRecord({ ...t, rounds });
+        return {
+          id: t.id || `${i}-${Date.now()}`,
+          name: (t.name || '').trim(),
+          deck: (t.deck || '').trim(),
+          date: t.date ?? Date.now(),
+          set: t.set?.trim() || undefined,
+          type: t.type?.trim() || undefined,
+          rounds,
+          wins: rec.wins,
+          losses: rec.losses,
+          finalized: Boolean((t as any).finalized) || false,
+        } as Tournament;
+      });
+      return migrated;
+    }
+
+    // 2) fallback para legado (v1) sem compressão e migra salvando em v2
+    const v1 = await AsyncStorage.getItem(K_TOURNAMENTS);
+    const raw = v1 ? (JSON.parse(v1) as Tournament[]) : [];
 
     // MIGRA / SANEIA rounds e recalcula placares
     const migrated = raw.map((t, i) => {
@@ -134,6 +174,12 @@ export async function loadTournaments(): Promise<Tournament[]> {
       } as Tournament;
     });
 
+    // salva imediatamente em v2 comprimido para economizar espaço
+    try {
+      await AsyncStorage.setItem(K_TOURNAMENTS_V2, serializeCompressed(migrated));
+      // remove legado para liberar espaço
+      await AsyncStorage.removeItem(K_TOURNAMENTS);
+    } catch {}
     return migrated;
   } catch {
     return [];
@@ -142,7 +188,9 @@ export async function loadTournaments(): Promise<Tournament[]> {
 
 export async function saveTournaments(list: Tournament[]) {
   try {
-    await AsyncStorage.setItem(K_TOURNAMENTS, JSON.stringify(list));
+    // grava apenas em v2 (comprimido) e remove a chave antiga para minimizar uso
+    await AsyncStorage.setItem(K_TOURNAMENTS_V2, serializeCompressed(list));
+    await AsyncStorage.removeItem(K_TOURNAMENTS);
   } catch {}
 }
 
@@ -207,6 +255,7 @@ export function matchupsForDeck(list: Tournament[], myDeck: string) {
   for (const t of list) {
     if (deckKey(t.deck) !== me) continue;
     for (const r of t.rounds ?? []) {
+      if (r.isBye) continue; // BYE não entra em matchups
       const label = (r.opponentLeader || '').trim();
       const k = deckKeyExact(label);          // <<---- CHAVE EXATA AQUI
       if (!k) continue;
@@ -237,6 +286,7 @@ export function deckSplits(list: Tournament[], myDeck: string) {
   for (const t of list) {
     if (deckKey(t.deck) !== me) continue;
     for (const r of t.rounds ?? []) {
+      if (r.isBye) continue; // BYE não entra em splits
       if (r.order === 'first') (r.result === 'win' ? o1w++ : o1l++);
       else if (r.order === 'second') (r.result === 'win' ? o2w++ : o2l++);
 
@@ -267,6 +317,7 @@ export function matchupSplitsForDeck(list: Tournament[], myDeck: string, opponen
   for (const t of list) {
     if (deckKey(t.deck) !== me) continue;
     for (const r of t.rounds ?? []) {
+      if (r.isBye) continue; // BYE não entra em splits por matchup
       const ropp = deckKeyExact(r.opponentLeader || '');
       if (ropp !== oppExact) continue;
 
@@ -306,7 +357,7 @@ export function matchupSplitsForDeck(list: Tournament[], myDeck: string, opponen
 // ---------------- Mutações ----------------
 export async function addRoundToTournament(
   tournamentId: string,
-  data: { opponentLeader?: string; dice: Dice; order: Order; result: Result }
+  data: { opponentLeader?: string; dice: Dice; order: Order; result: Result; isBye?: boolean }
 ): Promise<Tournament | null> {
   const list = await loadTournaments();
   const i = list.findIndex((t) => t.id === tournamentId);
@@ -327,6 +378,7 @@ export async function addRoundToTournament(
       dice: data.dice,
       order: data.order,
       result: data.result,
+      isBye: Boolean(data.isBye) || false,
     },
     rounds.length
   );

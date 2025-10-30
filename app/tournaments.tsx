@@ -1,12 +1,13 @@
 // app/tournaments.tsx
-import { router, Stack, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, Text, View } from 'react-native';
-import { Card, Chip, DeckAvatar, UI } from '../components/ui';
+import { Card, Chip, DeckAvatar, ScreenHeader, UI } from '../components/ui';
 import { computeRecord, deleteTournament, loadTournaments, Tournament } from '../state/app';
 
 // >>> Fonts
 import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
+import { Oswald_400Regular, useFonts as useOswald } from '@expo-google-fonts/oswald';
 
 function Tag({ label }: { label: string }) {
   return <Chip label={label} />;
@@ -83,6 +84,7 @@ export default function TournamentsScreen() {
 
   // Load fonts
   const [notoLoaded] = useNoto({ NotoSans_700Bold });
+  const [oswaldLoaded] = useOswald({ Oswald_400Regular });
 
   useEffect(() => {
     (async () => {
@@ -108,7 +110,7 @@ export default function TournamentsScreen() {
     setTournaments([...data].sort((a, b) => b.date - a.date));
   };
 
-  if (!notoLoaded || loading) {
+  if (!notoLoaded || !oswaldLoaded || loading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.color.bg }}>
         <Text style={{ fontFamily: notoLoaded ? 'NotoSans_700Bold' : undefined }}>Carregando…</Text>
@@ -118,17 +120,7 @@ export default function TournamentsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: UI.color.bg }}>
-      <Stack.Screen
-        options={{
-          title: 'Torneios',
-          headerStyle: { backgroundColor: UI.color.bg },
-          headerTintColor: UI.color.ink,
-          headerTitleStyle: { fontFamily: 'NotoSans_700Bold' },
-          headerShown: true,
-          headerBackVisible: true,
-          headerBackTitle: 'Voltar',
-        }}
-      />
+      <ScreenHeader title="Torneios" onBack={() => router.back()} brandColor="#8E7D55" />
       
       <View
         style={{

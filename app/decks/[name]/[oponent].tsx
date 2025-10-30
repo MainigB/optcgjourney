@@ -2,7 +2,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { Card, DeckAvatar, UI } from '../../../components/ui';
+import { Card, DeckAvatar, ScreenHeader, UI } from '../../../components/ui';
 import { DECKS } from '../../../data/decks';
 import { deckKey, loadTournaments, Tournament } from '../../../state/app';
 
@@ -20,6 +20,7 @@ type RItem = {
   result: 'win' | 'loss';
   order: 'first' | 'second';
   dice: 'won' | 'lost' | 'none';
+  opponentLeader: string;
   tournamentId: string;
   tournamentName: string;
   tournamentDate: number;
@@ -147,7 +148,7 @@ export default function MatchupDetail() {
           if (!r || !r.opponentLeader) continue;
           if (deckKey(r.opponentLeader || '') !== oppKeyParam) continue;
           out.push({
-            id: r.id, num: r.num, result: r.result, order: r.order, dice: r.dice,
+            id: r.id, num: r.num, result: r.result, order: r.order, dice: r.dice, opponentLeader: r.opponentLeader || '',
             tournamentId: t.id, tournamentName: t.name, tournamentDate: t.date
           });
         }
@@ -268,16 +269,9 @@ export default function MatchupDetail() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={{ padding: 16, paddingBottom: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
-            <Text style={{ fontSize: 48, color: BRAND }}>←</Text>
-          </Pressable>
-          <Text style={{ fontSize: 22, color: INK, fontFamily: 'Oswald_400Regular', letterSpacing: 0.3, flex: 1 }}>
-            {opponentNameParam ? `Matchup — ${deckNameParam} vs ${opponentNameParam}` : `Matchup — ${deckNameParam}`}
-          </Text>
-        </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
+      <View style={{ paddingBottom: 0 }}>
+        <ScreenHeader title={opponentNameParam ? `Matchup — ${deckNameParam} vs ${opponentNameParam}` : `Matchup — ${deckNameParam}`} onBack={() => router.back()} brandColor={BRAND} />
+        <View style={{ paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
             {rounds.length} partida(s) · {splits.total.wr}% WR
           </Text>

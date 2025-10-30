@@ -1,13 +1,13 @@
 // app/decks/index.tsx
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, Pressable } from 'react-native';
-import { aggregateDecks, loadTournaments, wrPercent } from '../../state/app';
 import { router, useFocusEffect } from 'expo-router';
-import { UI, Card, DeckAvatar } from '../../components/ui';
+import React, { useCallback, useEffect, useState } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
+import { Card, DeckAvatar, ScreenHeader, UI } from '../../components/ui';
+import { aggregateDecks, loadTournaments, wrPercent } from '../../state/app';
 
 // Fonts
-import { useFonts as useOswald, Oswald_400Regular } from '@expo-google-fonts/oswald';
-import { useFonts as useNoto, NotoSans_700Bold } from '@expo-google-fonts/noto-sans';
+import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
+import { Oswald_400Regular, useFonts as useOswald } from '@expo-google-fonts/oswald';
 
 const BRAND = '#8E7D55';
 const INK = UI?.color?.ink ?? '#0f172a';
@@ -38,17 +38,10 @@ export default function DecksList() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* HEADER fixo */}
-      <View style={{ padding: 16, paddingBottom: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
-            <Text style={{ fontSize: 48, color: BRAND }}>←</Text>
-          </Pressable>
-          <Text style={{ fontSize: 22, color: INK, fontFamily: 'Oswald_400Regular', letterSpacing: 0.3, flex: 1 }}>
-            Seus Decks
-          </Text>
-        </View>
+      <View style={{ paddingBottom: 0 }}>
+        <ScreenHeader title="Seus Decks" onBack={() => router.back()} brandColor={BRAND} />
 
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
+        <View style={{ paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
             {agg.length} deck(s)
           </Text>

@@ -2,7 +2,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { DeckAvatar, UI } from '../../components/ui';
+import { DeckAvatar, ScreenHeader, UI } from '../../components/ui';
 import { DECKS } from '../../data/decks';
 import {
     addRoundToTournament,
@@ -135,7 +135,7 @@ function RowItem({ r }: { r: Round }) {
         {r.opponentLeader || '-'}
       </Text>
       <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>{diceTxt}</Text>
-      <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>{orderBadge}</Text>
+      <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>{(r as any).isBye ? '-' : orderBadge}</Text>
       <Text
         style={{
           width: 64,
@@ -161,6 +161,7 @@ export default function TournamentDetail() {
   const [dice, setDice] = useState<Dice>('none');
   const [order, setOrder] = useState<Order | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const [isBye, setIsBye] = useState(false);
 
   const [finishOpen, setFinishOpen] = useState(false);
 
@@ -190,11 +191,17 @@ export default function TournamentDetail() {
       Alert.alert('Torneio finalizado', 'Não é possível adicionar novos rounds.');
       return;
     }
-    if (!oppSelected || !order || !result) {
+    if (!isBye && (!oppSelected || !order || !result)) {
       Alert.alert('Preencha todos os campos', 'Selecione líder, ordem e resultado.');
       return;
     }
-    const updated = await addRoundToTournament(t.id, { opponentLeader: oppSelected, dice, order, result });
+    const updated = await addRoundToTournament(t.id, {
+      opponentLeader: isBye ? 'BYE' : oppSelected || undefined,
+      dice: isBye ? 'none' : dice,
+      order: (isBye ? 'second' : order) as Order,
+      result: (isBye ? 'win' : result) as Result,
+      isBye,
+    });
     if (updated) {
       setT(updated);
       setOppInput('');
@@ -203,10 +210,11 @@ export default function TournamentDetail() {
       setDice('none');
       setOrder(null);
       setResult(null);
+      setIsBye(false);
     }
   }
 
-  const canSave = Boolean(oppSelected && order && result) && Boolean(t && !(t as any).finalized);
+  const canSave = Boolean(t && !(t as any).finalized) && (isBye || Boolean(oppSelected && order && result));
 
   if (!oswaldLoaded || !notoLoaded || loading || !t) {
     return (
@@ -231,24 +239,11 @@ export default function TournamentDetail() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* FIXO: Header + Deck */}
-      <View style={{ flexShrink: 0, padding: 16, paddingBottom: 0 }}>
+      <View style={{ flexShrink: 0, paddingBottom: 0 }}>
         {/* HEADER */}
-        <View style={{ marginBottom: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-            <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
-              <Text style={{ fontSize: 48, color: BRAND }}>←</Text>
-            </Pressable>
-            <Text style={{ fontSize: 22, color: INK, fontFamily: 'Oswald_400Regular', letterSpacing: 0.3, flex: 1 }}>
-              {t.name}
-            </Text>
+        <ScreenHeader title={t.name} onBack={() => router.back()} brandColor={BRAND} />
 
-            {(t as any).finalized ? (
-              <View style={{ borderWidth: 1, borderColor: BRAND, paddingHorizontal: 8, paddingVertical: 4 }}>
-                <Text style={{ color: BRAND, fontFamily: 'NotoSans_700Bold' }}>FINALIZADO</Text>
-              </View>
-            ) : null}
-          </View>
-
+        <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
               Resultado {rec.wins}-{rec.losses}
@@ -319,74 +314,107 @@ export default function TournamentDetail() {
               </Pressable>
             </View>
 
-            {/* Opponent leader */}
+            {/* Opponent leader + BYE */}
             <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Líder do oponente</Text>
-            <View style={{ position: 'relative', marginBottom: 12 }}>
-              <TextInput
-                value={oppInput}
-                onChangeText={(txt) => {
-                  setOppInput(txt);
-                  setOppSelected(null);
-                  setShowOppList(true);
-                }}
-                onFocus={() => setShowOppList(true)}
-                placeholder="Ex.: Roronoa Zoro (OP12)"
-                placeholderTextColor={PLACEHOLDER}
-                style={{
-                  borderWidth: 1,
-                  borderColor: LINE,
-                  borderRadius: 0,
-                  paddingHorizontal: 12,
-                  paddingVertical: 12,
-                  fontFamily: 'NotoSans_700Bold',
-                  color: INK,
-                  backgroundColor: '#fff',
-                }}
-              />
-              {showOppList && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: 46,
-                    left: 0,
-                    right: 0,
-                    maxHeight: 260,
-                    borderWidth: 1,
-                    borderColor: LINE,
-                    borderTopWidth: 0,
-                    backgroundColor: '#fff',
-                    zIndex: 10,
-                    overflow: 'hidden',
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <View style={{ position: 'relative', flex: 1 }}>
+                <TextInput
+                  value={oppInput}
+                  editable={!isBye}
+                  onChangeText={(txt) => {
+                    setOppInput(txt);
+                    setOppSelected(null);
+                    setShowOppList(true);
                   }}
-                >
-                  <ScrollView 
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator
-                    bounces={false}
-                    overScrollMode="never"
-                    style={{ maxHeight: 200 }}
-                    nestedScrollEnabled={true}
-                    scrollEventThrottle={16}
+                  onFocus={() => !isBye && setShowOppList(true)}
+                  placeholder="Ex.: Roronoa Zoro (OP12)"
+                  placeholderTextColor={PLACEHOLDER}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: isBye ? MID : LINE,
+                    borderRadius: 0,
+                    paddingHorizontal: 12,
+                    paddingVertical: 12,
+                    fontFamily: 'NotoSans_700Bold',
+                    color: INK,
+                    backgroundColor: '#fff',
+                  }}
+                />
+                {showOppList && !isBye && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: 46,
+                      left: 0,
+                      right: 0,
+                      maxHeight: 260,
+                      borderWidth: 1,
+                      borderColor: LINE,
+                      borderTopWidth: 0,
+                      backgroundColor: '#fff',
+                      zIndex: 10,
+                      overflow: 'hidden',
+                    }}
                   >
-                    {oppOptions.map((item) => (
-                      <Pressable
-                        key={item}
-                        onPress={() => {
-                          setOppInput(item);
-                          setOppSelected(item);
-                          setShowOppList(false);
-                        }}
-                        android_ripple={{ color: '#0000000d' }}
-                        style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: LINE }}
-                      >
-                        <Text numberOfLines={1} style={{ fontFamily: 'NotoSans_700Bold' }}>
-                          {item}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
+                    <ScrollView 
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator
+                      bounces={false}
+                      overScrollMode="never"
+                      style={{ maxHeight: 200 }}
+                      nestedScrollEnabled={true}
+                      scrollEventThrottle={16}
+                    >
+                      {oppOptions.map((item) => (
+                        <Pressable
+                          key={item}
+                          onPress={() => {
+                            setOppInput(item);
+                            setOppSelected(item);
+                            setShowOppList(false);
+                          }}
+                          android_ripple={{ color: '#0000000d' }}
+                          style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: LINE }}
+                        >
+                          <Text numberOfLines={1} style={{ fontFamily: 'NotoSans_700Bold' }}>
+                            {item}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
+              <Pressable
+                onPress={() => {
+                  const next = !isBye;
+                  setIsBye(next);
+                  if (next) {
+                    setOppInput('BYE');
+                    setOppSelected('BYE');
+                    setShowOppList(false);
+                    setDice('none');
+                    setOrder(null);
+                    setResult('win');
+                  } else {
+                    setOppInput('');
+                    setOppSelected(null);
+                    setResult(null);
+                  }
+                }}
+                android_ripple={{ color: '#00000010' }}
+                style={{
+                  height: 46,
+                  paddingHorizontal: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: isBye ? BRAND : '#fff',
+                  borderWidth: isBye ? 0 : 1,
+                  borderColor: BRAND,
+                }}
+              >
+                <Text style={{ color: isBye ? '#fff' : BRAND, fontFamily: 'NotoSans_700Bold', letterSpacing: 1 }}>BYE</Text>
+              </Pressable>
             </View>
 
             {/* Dado */}
@@ -398,6 +426,7 @@ export default function TournamentDetail() {
                 { key: 'won', label: 'VENCI' },
                 { key: 'lost', label: 'PERDI' },
               ]}
+              disabled={isBye}
             />
 
             {/* Ordem */}
@@ -410,6 +439,7 @@ export default function TournamentDetail() {
                   { key: 'first', label: 'PLAY' },
                   { key: 'second', label: 'DRAW' },
                 ]}
+                disabled={isBye}
               />
             </View>
 
@@ -423,6 +453,7 @@ export default function TournamentDetail() {
                   { key: 'win', label: 'VENCI' },
                   { key: 'loss', label: 'PERDI' },
                 ]}
+                disabled={isBye}
               />
             </View>
 

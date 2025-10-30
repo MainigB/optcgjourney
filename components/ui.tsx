@@ -32,6 +32,47 @@ export const UI = {
 export default UI;
 
 /* ========= Primitives ========= */
+export function ScreenHeader({
+  title,
+  onBack,
+  brandColor = '#8E7D55',
+  titleSize = 24,
+  paddingTop = 12,
+  showBottomLine = true,
+}: {
+  title: string;
+  onBack: () => void;
+  brandColor?: string;
+  titleSize?: number;
+  paddingTop?: number;
+  showBottomLine?: boolean;
+}) {
+  return (
+    <View style={{ paddingTop, paddingHorizontal: 16, paddingBottom: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+        <Pressable onPress={onBack} hitSlop={12} style={{ paddingRight: 8, transform: [{ translateY: -8 }] }}>
+          <Text style={{ fontSize: 48, color: brandColor }}>←</Text>
+        </Pressable>
+        <Text
+          style={{
+            fontSize: titleSize,
+            color: UI.color.ink,
+            fontFamily: 'Oswald_400Regular',
+            letterSpacing: 0.5,
+            flex: 1,
+          }}
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
+      </View>
+      {showBottomLine ? (
+        <View style={{ height: 1, backgroundColor: UI.color.line, position: 'absolute', left: 16, right: 16, bottom: 0 }} />
+      ) : null}
+    </View>
+  );
+}
+
 export function HeaderBar({
   title,
   leftLabel,

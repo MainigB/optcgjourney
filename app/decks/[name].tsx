@@ -1,20 +1,20 @@
 // app/decks/[name].tsx
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, FlatList } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { FlatList, Pressable, Text, View } from 'react-native';
+import { Card, DeckAvatar, ScreenHeader, SplitTwo, UI } from '../../components/ui';
 import {
-  deckStats,
-  loadTournaments,
-  computeRecord,
-  Tournament,
-  matchupsForDeck,
-  deckSplits,
+    computeRecord,
+    deckSplits,
+    deckStats,
+    loadTournaments,
+    matchupsForDeck,
+    Tournament,
 } from '../../state/app';
-import { UI, Card, DeckAvatar, SplitTwo } from '../../components/ui';
 
 // Fonts
-import { useFonts as useOswald, Oswald_400Regular } from '@expo-google-fonts/oswald';
-import { useFonts as useNoto, NotoSans_700Bold } from '@expo-google-fonts/noto-sans';
+import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
+import { Oswald_400Regular, useFonts as useOswald } from '@expo-google-fonts/oswald';
 
 const BRAND = '#8E7D55';
 const INK = UI?.color?.ink ?? '#0f172a';
@@ -60,17 +60,10 @@ export default function DeckProfile() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* HEADER fixo */}
-      <View style={{ padding: 16, paddingBottom: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
-            <Text style={{ fontSize: 48, color: BRAND }}>←</Text>
-          </Pressable>
-          <Text style={{ fontSize: 22, color: INK, fontFamily: 'Oswald_400Regular', letterSpacing: 0.3, flex: 1 }}>
-            Perfil do Deck
-          </Text>
-        </View>
+      <View style={{ paddingBottom: 0 }}>
+        <ScreenHeader title="Perfil do Deck" onBack={() => router.back()} brandColor={BRAND} />
 
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
+        <View style={{ paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
             {tournaments} torneio(s) · {totalRounds} partida(s) · {wr}% WR
           </Text>

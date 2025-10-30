@@ -2,7 +2,7 @@
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Keyboard, Pressable, Text, TextInput, View } from 'react-native';
-import { Card, UI } from '../components/ui';
+import { Card, ScreenHeader, UI } from '../components/ui';
 import { DECKS } from '../data/decks';
 import { loadTournaments, makeTournament, saveTournaments } from '../state/app';
 
@@ -88,25 +88,7 @@ export default function NewTournament() {
 
   return (
     <View style={{ flex: 1, backgroundColor: UI.color.bg }}>
-      <View style={{ paddingTop: 28, paddingHorizontal: 16, paddingBottom: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={{ paddingRight: 8 }}>
-            <Text style={{ fontSize: 48, color: BRAND }}>←</Text>
-          </Pressable>
-          <Text
-            style={{
-              fontSize: 28,
-              color: UI.color.ink,
-              fontFamily: 'Oswald_400Regular',
-              letterSpacing: 0.5,
-              flex: 1,
-            }}
-          >
-            Adicionar torneio
-          </Text>
-        </View>
-        <View style={{ height: 1, backgroundColor: UI.color.line, position: 'absolute', left: 16, right: 16, bottom: 0 }} />
-      </View>
+      <ScreenHeader title="Adicionar torneio" onBack={() => router.back()} brandColor={BRAND} />
 
       {/* FORM */}
       <View style={{ flex: 1, padding: 16 }}>
