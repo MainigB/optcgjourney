@@ -59,6 +59,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+.cursor/
 
 # --- Kotlin (artifacts) ---
 .kotlin/
