@@ -1,15 +1,18 @@
 // app/decks/[name].tsx
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import * as Sharing from 'expo-sharing';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, FlatList, Modal, Pressable, Text, View } from 'react-native';
+import ViewShot from 'react-native-view-shot';
+import { DeckExportImage } from '../../components/deck-export-image';
 import { Card, DeckAvatar, ScreenHeader, SplitTwo, UI } from '../../components/ui';
 import {
-    computeRecord,
-    deckSplits,
-    deckStats,
-    loadTournaments,
-    matchupsForDeck,
-    Tournament,
+  computeRecord,
+  deckSplits,
+  deckStats,
+  loadTournaments,
+  matchupsForDeck,
+  Tournament,
 } from '../../state/app';
 
 // Fonts
@@ -27,6 +30,9 @@ export default function DeckProfile() {
 
   const [all, setAll] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const exportViewRef = useRef<ViewShot>(null);
 
   const [oswaldLoaded] = useOswald({ Oswald_400Regular });
   const [notoLoaded] = useNoto({ NotoSans_700Bold });
@@ -56,6 +62,49 @@ export default function DeckProfile() {
   const splits = deckSplits(all, deckName);
 
   const totalRounds = splits.diceWon.rounds + splits.diceLost.rounds;
+
+  const handleExportImage = async () => {
+    try {
+      setExporting(true);
+      setShowExportModal(true);
+
+      // Aguarda um pouco para garantir que o componente foi renderizado
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const viewShot = exportViewRef.current;
+      if (!viewShot || typeof viewShot.capture !== 'function') {
+        throw new Error('Referência do componente não disponível');
+      }
+
+      const uri = await viewShot.capture();
+      
+      if (!uri) {
+        throw new Error('Falha ao capturar imagem');
+      }
+
+      // Verifica se o compartilhamento está disponível
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('Erro', 'Compartilhamento não disponível neste dispositivo');
+        setShowExportModal(false);
+        return;
+      }
+
+      // Compartilha a imagem
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: 'Compartilhar estatísticas do deck',
+      });
+
+      setShowExportModal(false);
+    } catch (error) {
+      console.error('Erro ao exportar imagem:', error);
+      Alert.alert('Erro', 'Não foi possível exportar a imagem. Tente novamente.');
+      setShowExportModal(false);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -203,7 +252,25 @@ export default function DeckProfile() {
       </View>
 
       {/* RODAPÉ fixo */}
-      <View style={{ padding: 16, paddingTop: 12 }}>
+      <View style={{ padding: 16, paddingTop: 12, gap: 10 }}>
+        <Pressable
+          onPress={handleExportImage}
+          disabled={exporting}
+          android_ripple={{ color: '#00000010' }}
+          style={{
+            height: 48,
+            borderRadius: 0,
+            backgroundColor: exporting ? '#cbd5e1' : BRAND,
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: exporting ? 0.6 : 1,
+          }}
+        >
+          <Text style={{ color: '#fff', fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
+            {exporting ? 'EXPORTANDO...' : 'EXPORTAR IMAGEM'}
+          </Text>
+        </Pressable>
+
         <Pressable
           onPress={() => router.back()}
           android_ripple={{ color: '#00000010' }}
@@ -222,6 +289,30 @@ export default function DeckProfile() {
           </Text>
         </Pressable>
       </View>
+
+      {/* Modal para renderizar a imagem de exportação */}
+      <Modal
+        visible={showExportModal}
+        transparent
+        animationType="none"
+        onRequestClose={() => setShowExportModal(false)}
+      >
+        <View style={{ position: 'absolute', left: -2000, top: -2000, width: 1200, height: 2000, overflow: 'hidden' }}>
+          <ViewShot ref={exportViewRef} options={{ format: 'png', quality: 1.0 }}>
+            <DeckExportImage
+              deckName={deckName}
+              tournaments={filtered}
+              matchups={matchups}
+              wins={wins}
+              losses={losses}
+              wr={wr}
+              totalTournaments={tournaments}
+              orderFirstWr={splits.orderFirst.wr}
+              orderSecondWr={splits.orderSecond.wr}
+            />
+          </ViewShot>
+        </View>
+      </Modal>
     </View>
   );
 }
