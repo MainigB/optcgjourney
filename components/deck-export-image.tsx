@@ -35,9 +35,9 @@ export function DeckExportImage({
 }: DeckExportImageProps) {
   const totalMatches = wins + losses;
 
-  // Top 3 melhores matchups (maior % de vitória, mínimo 1 partida)
+  // Top 3 melhores matchups (maior % de vitória, mínimo 1 partida, WR > 0%)
   const bestMatchups = matchups
-    .filter((m) => m.rounds >= 1)
+    .filter((m) => m.rounds >= 1 && m.wr > 0)
     .sort((a, b) => b.wr - a.wr)
     .slice(0, 3);
 
@@ -78,7 +78,7 @@ export function DeckExportImage({
           textAlign: 'center',
         }}
       >
-        Estatísticas do meu deck {deckName}
+        Estatísticas com o deck{'\n'}{deckName}
       </Text>
 
       {/* Subtítulo: X partidas em Y torneios - Z%WR */}
@@ -179,14 +179,14 @@ export function DeckExportImage({
         >
           <View style={{ alignItems: 'center' }}>
             <Text style={{ fontSize: 24, fontFamily: 'NotoSans_700Bold', color: SUB, marginBottom: 8 }}>
-              Indo 1º
+              Indo 1º a WR é
             </Text>
             <Text style={{ fontSize: 40, fontFamily: 'NotoSans_700Bold', color: INK }}>{orderFirstWr}%</Text>
           </View>
           <View style={{ width: 2, backgroundColor: LINE }} />
           <View style={{ alignItems: 'center' }}>
             <Text style={{ fontSize: 24, fontFamily: 'NotoSans_700Bold', color: SUB, marginBottom: 8 }}>
-              Indo 2º
+              Indo 2º a WR é
             </Text>
             <Text style={{ fontSize: 40, fontFamily: 'NotoSans_700Bold', color: INK }}>{orderSecondWr}%</Text>
           </View>
@@ -296,7 +296,7 @@ export function DeckExportImage({
       )}
 
       {/* Líderes enfrentados */}
-      {leadersFaced.length > 0 && (
+      {/*{leadersFaced.length > 0 && (
         <View style={{ marginBottom: 40 }}>
           <Text
             style={{
@@ -327,7 +327,7 @@ export function DeckExportImage({
             ))}
           </View>
         </View>
-      )}
+      )}*/}
 
       {/* Footer */}
       <View style={{ marginTop: 40, alignItems: 'center', borderTopWidth: 1, borderTopColor: LINE, paddingTop: 20 }}>
