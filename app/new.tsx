@@ -36,7 +36,7 @@ export default function NewTournament() {
   const [oswaldLoaded] = useOswald({ Oswald_400Regular });
   const [notoLoaded] = useNoto({ NotoSans_700Bold });
 
-  const canSave = Boolean(name.trim() && deckSelected);
+  const isReady = Boolean(name.trim() && deckSelected);
 
   const deckOptions = useMemo(() => {
     const q = normalize(deckInput);
@@ -45,7 +45,7 @@ export default function NewTournament() {
   }, [deckInput]);
 
   async function addTournament() {
-    if (!canSave) return;
+    if (!isReady) return;
     const existing = await loadTournaments();
     const t = makeTournament({ name: name.trim(), deck: deckSelected! });
     await saveTournaments([t, ...existing]);
@@ -75,7 +75,7 @@ export default function NewTournament() {
       shadowOffset: { width: 0, height: 3 },
     }),
   };
-  const btnPrimary = { ...btnBase, backgroundColor: canSave ? BRAND : UI.color.mid };
+  const btnPrimary = { ...btnBase, backgroundColor: isReady ? BRAND : UI.color.mid };
   const btnSecondary = { ...btnBase, backgroundColor: '#f1f5f9', borderWidth: 2, borderColor: BRAND };
 
   if (!oswaldLoaded || !notoLoaded) {
@@ -185,11 +185,11 @@ export default function NewTournament() {
       <View style={{ paddingVertical: 16, gap: 12, paddingBottom: 40 }}>
         <Pressable
           onPress={addTournament}
-          disabled={!canSave}
+          disabled={!isReady}
           android_ripple={{ color: '#ffffff22' }}
           style={({ pressed }) => [
             btnPrimary,
-            pressed && canSave ? { opacity: 0.9, transform: [{ scale: 0.998 }] } : null,
+            pressed && isReady ? { opacity: 0.9, transform: [{ scale: 0.998 }] } : null,
           ]}
         >
           <Text
@@ -200,7 +200,7 @@ export default function NewTournament() {
               fontFamily: 'NotoSans_700Bold',
             }}
           >
-            {deckSelected ? 'ADICIONAR TORNEIO' : 'ESCOLHA UM DECK'}
+            {isReady ? 'ADICIONAR TORNEIO' : 'PREENCHA OS CAMPOS'}
           </Text>
         </Pressable>
 

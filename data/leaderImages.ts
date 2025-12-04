@@ -88,7 +88,7 @@ export const LEADER_IMAGES_EXACT: Record<string, string> = {
   [deckKeyExact('⚫ Rob Lucci (OP07)')]: 'https://repositorio.sbrauble.com/arquivos/in/onepiece/34/665f6ac181b6a-uyejf-2l65r-abe41489b7529f93619f73610b65569a.jpg',
   [deckKeyExact('⚫ Rob Lucci (OP03)')]: 'https://repositorio.sbrauble.com/arquivos/in/onepiece/5/64a991f52287e-cax7v-p039g-1ef836f7f7838f19ff2372cb98943366.jpg',
   [deckKeyExact('🔴 Roronoa Zoro (OP01)')]: 'https://repositorio.sbrauble.com/arquivos/in/onepiece/6/641ca2d654f49-u7g9d-1szxa-0d3051f25e23010bea9c61a688e59d35.jpg',
-  [deckKeyExact('🟢 Roronoa Zoro (OP12)')]: 'https://i.pinimg.com/736x/17/2c/b5/172cb596413b9dc4c81b6fb0bb69e3de.jpg',
+  [deckKeyExact('🟢 Roronoa Zoro (OP12)')]: 'https://repositorio.sbrauble.com/arquivos/in/onepiece/61/68912af060c5a-yz62w-yg8o7-e37081b67298f66afee247dc4a64fa84.jpg',
   [deckKeyExact('🟢 🔵 Roronoa Zoro & Sanji (ST12)')]: 'https://repositorio.sbrauble.com/arquivos/in/onepiece/31/65e21f6266193-en48j-9x6ob-d8e831073ae7f8d2fe010411b79b4c8b.jpg',
   [deckKeyExact('🔴 ⚫ Sabo (OP13)')]: 'https://repositorio.sbrauble.com/arquivos/in/onepiece/70/69025e4bb3e61-koafy-7i2zb-c9f659e6c165599f3330761549027585.jpg',
   [deckKeyExact('🔴 ⚫ Sabo (OP05)')]: 'https://repositorio.sbrauble.com/arquivos/in/onepiece/20/65660b57af557-uc2d0-zk3fa-c50bda060cc1af3b41e5f2fa36bee4f5.jpg',
