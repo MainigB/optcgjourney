@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Card, DeckAvatar, ScreenHeader, UI } from '../../../components/ui';
 import { Tournament, deckKey, deckKeyExact, loadTournaments, matchupsForDeck } from '../../../state/app';
+import { t } from '../../../i18n';
 
 // Fonts
 import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
@@ -35,7 +36,7 @@ export default function DeckMatchupsList() {
   if (!oswaldLoaded || !notoLoaded || loading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Carregando…</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -46,10 +47,10 @@ export default function DeckMatchupsList() {
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* HEADER */}
       <View style={{ paddingBottom: 0, paddingHorizontal: 16 }}>
-        <ScreenHeader title={`Matchups — ${deckName}`} onBack={() => router.back()} brandColor={BRAND} />
+        <ScreenHeader title={t('deck.matchupsTitle', { deck: deckName })} onBack={() => router.back()} brandColor={BRAND} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-            {matchups.length} oponente(s)
+            {t('deck.opponents', { count: matchups.length })}
           </Text>
           <View style={{ height: 1, backgroundColor: LINE, position: 'absolute', left: 0, right: 0, bottom: 0 }} />
         </View>
@@ -67,7 +68,7 @@ export default function DeckMatchupsList() {
         {matchups.length === 0 ? (
           <Card>
             <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-              Sem dados de matchups ainda.
+              {t('deck.noMatchups')}
             </Text>
           </Card>
         ) : (
@@ -98,7 +99,7 @@ export default function DeckMatchupsList() {
                         {item.opponent}
                       </Text>
                       <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-                        {item.rounds} partida(s)
+                        {t('deck.matches', { count: item.rounds })}
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
@@ -134,7 +135,7 @@ export default function DeckMatchupsList() {
           }}
         >
           <Text style={{ color: BRAND, fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-            VOLTAR
+            {t('common.back')}
           </Text>
         </Pressable>
       </View>

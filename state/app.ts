@@ -434,3 +434,24 @@ export async function deleteTournament(tournamentId: string): Promise<boolean> {
   await saveTournaments(filtered);
   return true;
 }
+
+// ---- Atualizar torneio ----
+export async function updateTournament(
+  tournamentId: string,
+  updates: { name?: string; date?: number }
+): Promise<Tournament | null> {
+  const list = await loadTournaments();
+  const i = list.findIndex(t => t.id === tournamentId);
+  if (i < 0) return null;
+
+  const t0 = list[i];
+  const nextT: Tournament = {
+    ...t0,
+    name: updates.name !== undefined ? (updates.name || '').trim() : t0.name,
+    date: updates.date !== undefined ? updates.date : t0.date,
+  };
+  const next = [...list];
+  next[i] = nextT;
+  await saveTournaments(next);
+  return nextT;
+}

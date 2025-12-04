@@ -6,13 +6,14 @@ import { Alert, FlatList, Modal, Pressable, Text, View } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import { DeckExportImage } from '../../components/deck-export-image';
 import { Card, DeckAvatar, ScreenHeader, SplitTwo, UI } from '../../components/ui';
+import { t } from '../../i18n';
 import {
-  computeRecord,
-  deckSplits,
-  deckStats,
-  loadTournaments,
-  matchupsForDeck,
-  Tournament,
+    computeRecord,
+    deckSplits,
+    deckStats,
+    loadTournaments,
+    matchupsForDeck,
+    Tournament,
 } from '../../state/app';
 
 // Fonts
@@ -50,7 +51,7 @@ export default function DeckProfile() {
   if (!oswaldLoaded || !notoLoaded || loading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
-        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Carregando…</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -73,19 +74,19 @@ export default function DeckProfile() {
 
       const viewShot = exportViewRef.current;
       if (!viewShot || typeof viewShot.capture !== 'function') {
-        throw new Error('Referência do componente não disponível');
+        throw new Error(t('deck.errorRef'));
       }
 
       const uri = await viewShot.capture();
       
       if (!uri) {
-        throw new Error('Falha ao capturar imagem');
+        throw new Error(t('deck.errorCapture'));
       }
 
       // Verifica se o compartilhamento está disponível
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
-        Alert.alert('Erro', 'Compartilhamento não disponível neste dispositivo');
+        Alert.alert(t('deck.errorExport'), t('deck.errorShare'));
         setShowExportModal(false);
         return;
       }
@@ -93,13 +94,13 @@ export default function DeckProfile() {
       // Compartilha a imagem
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
-        dialogTitle: 'Compartilhar estatísticas do deck',
+        dialogTitle: t('deck.shareTitle'),
       });
 
       setShowExportModal(false);
     } catch (error) {
       console.error('Erro ao exportar imagem:', error);
-      Alert.alert('Erro', 'Não foi possível exportar a imagem. Tente novamente.');
+      Alert.alert(t('deck.errorExport'), t('deck.errorExportMessage'));
       setShowExportModal(false);
     } finally {
       setExporting(false);
@@ -110,11 +111,11 @@ export default function DeckProfile() {
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* HEADER fixo */}
       <View style={{ paddingBottom: 0, paddingHorizontal: 16 }}>
-        <ScreenHeader title="Perfil do Deck" onBack={() => router.back()} brandColor={BRAND} />
+        <ScreenHeader title={t('deck.profile')} onBack={() => router.back()} brandColor={BRAND} />
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-            {tournaments} torneio(s) · {totalRounds} partida(s) · {wr}% WR
+            {t('deck.tournamentsCount', { count: tournaments })} · {t('deck.roundsCount', { count: totalRounds })} · {wr}% WR
           </Text>
           <View style={{ height: 1, backgroundColor: LINE, position: 'absolute', left: 0, right: 0, bottom: 0 }} />
         </View>
@@ -129,11 +130,11 @@ export default function DeckProfile() {
               {deckName}
             </Text>
             <Text style={{ color: SUB, marginTop: 2, fontFamily: 'NotoSans_700Bold' }}>
-              {tournaments} torneio(s)
+              {t('deck.tournamentsCount', { count: tournaments })}
             </Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>Record</Text>
+            <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>{t('tournament.record')}</Text>
             <Text style={{ fontFamily: 'NotoSans_700Bold' }}>
               {wins}-{losses}
             </Text>
@@ -145,7 +146,7 @@ export default function DeckProfile() {
       <View style={{ paddingHorizontal: 16, paddingTop: 8, gap: 12 }}>
         {/* Splits */}
         <View>
-          <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 8 }}>Splits</Text>
+          <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 8 }}>{t('deck.splits')}</Text>
           <View
             style={{
               flexDirection: 'row',
@@ -155,7 +156,7 @@ export default function DeckProfile() {
             }}
           >
             <SplitTwo
-              title="Ordem"
+              title={t('deck.order')}
               aLabel="1st"
               aW={splits.orderFirst.wins}
               aL={splits.orderFirst.losses}
@@ -165,7 +166,7 @@ export default function DeckProfile() {
             />
 
             <SplitTwo
-              title="Dado"
+              title={t('deck.dice')}
               aLabel="Won"
               aW={splits.diceWon.wins}
               aL={splits.diceWon.losses}
@@ -178,11 +179,11 @@ export default function DeckProfile() {
 
         {/* Matchups -> botão para a nova tela */}
         <View>
-          <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 8 }}>Matchups</Text>
+          <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 8 }}>{t('deck.matchups')}</Text>
           {matchups.length === 0 ? (
             <Card>
               <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-                Sem dados de matchups ainda.
+                {t('deck.noMatchups')}
               </Text>
             </Card>
           ) : (
@@ -197,9 +198,9 @@ export default function DeckProfile() {
             >
               <Card style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Ver todos os matchups</Text>
+                  <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{t('deck.viewAll')}</Text>
                   <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', marginTop: 2 }}>
-                    {matchups.length} deck(s) enfrentado(s)
+                    {t('deck.opponentsFaced', { count: matchups.length })}
                   </Text>
                 </View>
                 <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>›</Text>
@@ -211,12 +212,12 @@ export default function DeckProfile() {
 
       {/* SÓ ESTA PARTE É ROLÁVEL */}
       <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 12 }}>
-        <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 8 }}>Torneios com este deck</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold', marginBottom: 8 }}>{t('deck.tournamentsWithDeck')}</Text>
 
         {filtered.length === 0 ? (
           <Card>
             <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-              Sem torneios ainda.
+              {t('deck.noTournaments')}
             </Text>
           </Card>
         ) : (
@@ -267,7 +268,7 @@ export default function DeckProfile() {
           }}
         >
           <Text style={{ color: '#fff', fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-            {exporting ? 'EXPORTANDO...' : 'EXPORTAR IMAGEM'}
+            {exporting ? t('common.exporting') : t('deck.exportImage')}
           </Text>
         </Pressable>
 

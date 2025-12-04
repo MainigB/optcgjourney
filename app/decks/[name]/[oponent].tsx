@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Card, DeckAvatar, ScreenHeader, UI } from '../../../components/ui';
 import { DECKS } from '../../../data/decks';
 import { deckKey, loadTournaments, Tournament } from '../../../state/app';
+import { t } from '../../../i18n';
 
 import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
 import { Oswald_400Regular, useFonts as useOswald } from '@expo-google-fonts/oswald';
@@ -108,10 +109,10 @@ export default function MatchupDetail() {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
         <Text style={{ fontFamily: 'NotoSans_700Bold', color: '#dc2626' }}>
-          Nome do deck não encontrado
+          {t('matchup.deckNotFound')}
         </Text>
         <Pressable onPress={() => router.back()} style={{ marginTop: 16, padding: 12, backgroundColor: BRAND, borderRadius: 8 }}>
-          <Text style={{ color: 'white', fontFamily: 'NotoSans_700Bold' }}>Voltar</Text>
+          <Text style={{ color: 'white', fontFamily: 'NotoSans_700Bold' }}>{t('common.back')}</Text>
         </Pressable>
       </View>
     );
@@ -259,7 +260,7 @@ export default function MatchupDetail() {
   if (!oswaldLoaded || !notoLoaded || loading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
-        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Carregando…</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -270,10 +271,10 @@ export default function MatchupDetail() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ paddingBottom: 0, paddingHorizontal: 16 }}>
-        <ScreenHeader title={opponentNameParam ? `Matchup — ${deckNameParam} vs ${opponentNameParam}` : `Matchup — ${deckNameParam}`} onBack={() => router.back()} brandColor={BRAND} />
+        <ScreenHeader title={opponentNameParam ? t('matchup.title', { deck: deckNameParam, opponent: opponentNameParam }) : t('matchup.titleSimple', { deck: deckNameParam })} onBack={() => router.back()} brandColor={BRAND} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-            {rounds.length} partida(s) · {splits.total.wr}% WR
+            {t('matchup.matchesCount', { count: rounds.length })} · {splits.total.wr}% WR
           </Text>
           <View style={{ height: 1, backgroundColor: LINE, position: 'absolute', left: 0, right: 0, bottom: 0 }} />
         </View>
@@ -293,7 +294,7 @@ export default function MatchupDetail() {
             {/* Seu Líder */}
             <View style={{ alignItems: 'center', gap: 8 }}>
               <DeckAvatar label={myDisplay} tone={myTone} size={100} imgShiftY={10} />
-              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 11 }}>Seu Líder</Text>
+              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 11 }}>{t('matchup.yourLeader')}</Text>
               <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 12, textAlign: 'center' }} numberOfLines={2}>{myDisplay}</Text>
             </View>
 
@@ -316,28 +317,28 @@ export default function MatchupDetail() {
             {/* Líder Oponente */}
             <View style={{ alignItems: 'center', gap: 8 }}>
               <DeckAvatar label={oppDisplay || 'Unknown'} tone={oppTone} size={100} imgShiftY={10} />
-              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 11 }}>Líder Oponente</Text>
+              <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', fontSize: 11 }}>{t('matchup.opponentLeader')}</Text>
               <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 12, textAlign: 'center' }} numberOfLines={2}>{oppDisplay || 'Unknown'}</Text>
             </View>
           </View>
         </Card>
 
         {/* ===== Ordem ===== */}
-        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>Ordem</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>{t('matchup.order')}</Text>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <StatPill label="1️⃣ First"  w={splits.orderFirst.wins}  l={splits.orderFirst.losses} />
           <StatPill label="2️⃣ Second" w={splits.orderSecond.wins} l={splits.orderSecond.losses} />
         </View>
 
         {/* ===== Dado ===== */}
-        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>Dado</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>{t('matchup.dice')}</Text>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <StatPill label="🎲 Won"  w={splits.diceWon.wins}  l={splits.diceWon.losses} />
           <StatPill label="🎲 Lost" w={splits.diceLost.wins} l={splits.diceLost.losses} />
         </View>
 
         {/* ===== Matriz (Ordem × Dado) — 2x2 compacto ===== */}
-        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>Matriz (Ordem × Dado)</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>{t('matchup.matrix')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
           <MatrixCell title="1️⃣ + 🎲 Won"  w={splits.matrix.firstWon.wins}  l={splits.matrix.firstWon.losses} />
           <MatrixCell title="1️⃣ + 🎲 Lost" w={splits.matrix.firstLost.wins} l={splits.matrix.firstLost.losses} />
@@ -346,9 +347,9 @@ export default function MatchupDetail() {
         </View>
 
         {/* ===== Partidas ===== */}
-        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>Partidas</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16, marginBottom: 8 }}>{t('matchup.matches')}</Text>
         {rounds.length === 0 ? (
-          <Card><Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>Sem partidas ainda contra este deck.</Text></Card>
+          <Card><Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>{t('matchup.noMatches')}</Text></Card>
         ) : (
           <View style={{ paddingBottom: 24 }}>
             {rounds.map((item) => (
@@ -389,7 +390,7 @@ export default function MatchupDetail() {
           }}
         >
           <Text style={{ color: BRAND, fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-            VOLTAR
+            {t('common.back')}
           </Text>
         </Pressable>
       </View>

@@ -5,6 +5,7 @@ import { FlatList, Keyboard, Pressable, Text, TextInput, View } from 'react-nati
 import { Card, ScreenHeader, UI } from '../components/ui';
 import { DECKS } from '../data/decks';
 import { loadTournaments, makeTournament, saveTournaments } from '../state/app';
+import { t } from '../i18n';
 
 // Fonts (mesmo padrão da Home)
 import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
@@ -81,23 +82,23 @@ export default function NewTournament() {
   if (!oswaldLoaded || !notoLoaded) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.color.bg }}>
-        <Text>Carregando…</Text>
+        <Text>{t('common.loading')}</Text>
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: UI.color.bg }}>
-      <ScreenHeader title="Adicionar torneio" onBack={() => router.back()} brandColor={BRAND} />
+      <ScreenHeader title={t('tournament.addTitle')} onBack={() => router.back()} brandColor={BRAND} />
 
       {/* FORM */}
       <View style={{ flex: 1, padding: 16 }}>
         {/* Nome */}
-        <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Nome do torneio</Text>
+        <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>{t('tournament.nameLabel')}</Text>
         <TextInput
           value={name}
           onChangeText={setName}
-          placeholder="ex.: Torneio da Loja"
+          placeholder={t('tournament.namePlaceholder')}
           placeholderTextColor="#475569"
           onFocus={() => setNameFocused(true)}
           onBlur={() => setNameFocused(false)}
@@ -110,7 +111,7 @@ export default function NewTournament() {
         />
 
         {/* Deck */}
-        <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Deck usado</Text>
+        <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>{t('tournament.deckLabel')}</Text>
         <View style={{ position: 'relative' }}>
           <TextInput
             value={deckInput}
@@ -119,7 +120,7 @@ export default function NewTournament() {
               setDeckSelected(null);
               setShowDeckList(true);
             }}
-            placeholder="ex.: Roronoa Zoro (OP01)"
+            placeholder={t('tournament.deckPlaceholder')}
             placeholderTextColor="#475569"
             onFocus={() => {
               setShowDeckList(true);
@@ -200,7 +201,7 @@ export default function NewTournament() {
               fontFamily: 'NotoSans_700Bold',
             }}
           >
-            {isReady ? 'ADICIONAR TORNEIO' : 'PREENCHA OS CAMPOS'}
+            {isReady ? t('tournament.addButton') : t('tournament.fillFields')}
           </Text>
         </Pressable>
 
@@ -210,7 +211,7 @@ export default function NewTournament() {
           style={({ pressed }) => [btnSecondary, pressed && { opacity: 0.95, transform: [{ scale: 0.998 }] }]}
         >
           <Text style={{ color: BRAND, fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-            CANCELAR
+            {t('common.cancel')}
           </Text>
         </Pressable>
       </View>

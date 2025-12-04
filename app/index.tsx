@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppLogo } from '../components/logo';
 import { UI } from '../components/ui';
+import { t } from '../i18n';
 
 // >>> Fonts
 import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
@@ -18,7 +19,7 @@ export default function Home() {
   if (!oswaldLoaded || !notoLoaded) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.color.bg }}>
-        <Text style={{ fontFamily: oswaldLoaded ? 'NotoSans_700Bold' : undefined }}>Carregando…</Text>
+        <Text style={{ fontFamily: oswaldLoaded ? 'NotoSans_700Bold' : undefined }}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -59,7 +60,7 @@ export default function Home() {
           android_ripple={{ color: '#ffffff22' }}
           style={styles.btnPrimary}
         >
-          <Text style={{ color: 'white', fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>ADICIONAR TORNEIO</Text>
+          <Text style={{ color: 'white', fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>{t('home.addTournament')}</Text>
         </Pressable>
 
         <Pressable
@@ -67,7 +68,7 @@ export default function Home() {
           android_ripple={{ color: '#00000010' }}
           style={styles.btnSecondary}
         >
-          <Text style={{ color: BRAND, fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>MEUS DECKS</Text>
+          <Text style={{ color: BRAND, fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>{t('home.myDecks')}</Text>
         </Pressable>
 
         <Pressable
@@ -75,7 +76,7 @@ export default function Home() {
           android_ripple={{ color: '#00000010' }}
           style={styles.btnSecondary}
         >
-          <Text style={{ color: BRAND, fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>VER TORNEIOS</Text>
+          <Text style={{ color: BRAND, fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>{t('home.viewTournaments')}</Text>
         </Pressable>
 
                 <Text

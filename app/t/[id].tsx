@@ -15,6 +15,7 @@ import {
     setTournamentFinalized,
     Tournament
 } from '../../state/app';
+import { t } from '../../i18n';
 
 import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
 import { Oswald_400Regular, useFonts as useOswald } from '@expo-google-fonts/oswald';
@@ -152,7 +153,7 @@ function RowItem({ r }: { r: Round }) {
 
 export default function TournamentDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [t, setT] = useState<Tournament | null>(null);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [oppInput, setOppInput] = useState('');
@@ -172,12 +173,12 @@ export default function TournamentDetail() {
     (async () => {
       const list = await loadTournaments();
       const found = list.find((x) => x.id === id);
-      setT(found ?? null);
+      setTournament(found ?? null);
       setLoading(false);
     })();
   }, [id]);
 
-  const rec = useMemo(() => (t ? computeRecord(t) : { wins: 0, losses: 0 }), [t]);
+  const rec = useMemo(() => (tournament ? computeRecord(tournament) : { wins: 0, losses: 0 }), [tournament]);
 
   const oppOptions = useMemo(() => {
     const q = normalize(oppInput);
@@ -186,16 +187,16 @@ export default function TournamentDetail() {
   }, [oppInput]);
 
   async function addRound() {
-    if (!t) return;
-    if ((t as any).finalized) {
-      Alert.alert('Torneio finalizado', 'Não é possível adicionar novos rounds.');
+    if (!tournament) return;
+    if ((tournament as any).finalized) {
+      Alert.alert(t('tournament.finalizedMessage'), t('tournament.finalizedMessage'));
       return;
     }
     if (!isBye && (!oppSelected || !order || !result)) {
-      Alert.alert('Preencha todos os campos', 'Selecione líder, ordem e resultado.');
+      Alert.alert(t('tournament.fillAllFields'), t('tournament.fillFieldsMessage'));
       return;
     }
-    const updated = await addRoundToTournament(t.id, {
+    const updated = await addRoundToTournament(tournament.id, {
       opponentLeader: isBye ? 'BYE' : oppSelected || undefined,
       dice: isBye ? 'none' : dice,
       order: (isBye ? 'second' : order) as Order,
@@ -203,7 +204,7 @@ export default function TournamentDetail() {
       isBye,
     });
     if (updated) {
-      setT(updated);
+      setTournament(updated);
       setOppInput('');
       setOppSelected(null);
       setShowOppList(false);
@@ -214,17 +215,17 @@ export default function TournamentDetail() {
     }
   }
 
-  const canSave = Boolean(t && !(t as any).finalized) && (isBye || Boolean(oppSelected && order && result));
+  const canSave = Boolean(tournament && !(tournament as any).finalized) && (isBye || Boolean(oppSelected && order && result));
 
-  if (!oswaldLoaded || !notoLoaded || loading || !t) {
+  if (!oswaldLoaded || !notoLoaded || loading || !tournament) {
     return (
       <View style={{ flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ fontFamily: 'NotoSans_700Bold' }}>
-          {loading ? 'Carregando…' : 'Torneio não encontrado.'}
+          {loading ? t('common.loading') : t('tournament.notFound')}
         </Text>
         {!loading && (
           <Pressable onPress={() => router.back()} style={{ marginTop: 8 }}>
-            <Text style={{ color: BRAND, fontFamily: 'NotoSans_700Bold' }}>← Voltar</Text>
+            <Text style={{ color: BRAND, fontFamily: 'NotoSans_700Bold' }}>← {t('common.back')}</Text>
           </Pressable>
         )}
       </View>
@@ -234,35 +235,35 @@ export default function TournamentDetail() {
   const tone: 'ok' | 'bad' | 'mid' =
     rec.wins > rec.losses ? 'ok' : rec.wins < rec.losses ? 'bad' : 'mid';
 
-  const disabled = (t as any).finalized === true;
+  const disabled = (tournament as any).finalized === true;
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* FIXO: Header + Deck */}
       <View style={{ flexShrink: 0, paddingBottom: 0, paddingHorizontal: 16 }}>
         {/* HEADER */}
-        <ScreenHeader title={t.name} onBack={() => router.back()} brandColor={BRAND} />
+        <ScreenHeader title={tournament.name} onBack={() => router.back()} brandColor={BRAND} />
 
         <View style={{ marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-              Resultado {rec.wins}-{rec.losses}
+              {t('tournament.result')} {rec.wins}-{rec.losses}
             </Text>
             <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-              {new Date(t.date).toLocaleDateString()}
+              {new Date(tournament.date).toLocaleDateString()}
             </Text>
           </View>
         </View>
 
         {/* Linha do deck */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
-          <DeckAvatar label={t.deck} tone={tone} size={56} />
+          <DeckAvatar label={tournament.deck} tone={tone} size={56} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 16, fontFamily: 'NotoSans_700Bold', color: INK }}>{t.deck}</Text>
-            <Text style={{ color: SUB, marginTop: 4, fontFamily: 'NotoSans_700Bold' }}>{t.name}</Text>
+            <Text style={{ fontSize: 16, fontFamily: 'NotoSans_700Bold', color: INK }}>{tournament.deck}</Text>
+            <Text style={{ color: SUB, marginTop: 4, fontFamily: 'NotoSans_700Bold' }}>{tournament.name}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>Record</Text>
+            <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>{t('tournament.record')}</Text>
             <Text style={{ fontFamily: 'NotoSans_700Bold' }}>
               {rec.wins}-{rec.losses}
             </Text>
@@ -283,10 +284,10 @@ export default function TournamentDetail() {
         nestedScrollEnabled={true}
       >
         {/* Aviso de bloqueio */}
-        {(t as any).finalized ? (
+        {(tournament as any).finalized ? (
           <View style={{ borderWidth: 1, borderColor: LINE, padding: 12, backgroundColor: '#f8fafc', marginTop: 6 }}>
             <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-              Este torneio está finalizado. Adição/edição de rounds está bloqueada.
+              {t('tournament.finalized')}
             </Text>
           </View>
         ) : null}
@@ -297,7 +298,7 @@ export default function TournamentDetail() {
             {/* Título do round + limpar */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <Text style={{ fontSize: 16, fontFamily: 'NotoSans_700Bold' }}>
-                Round {(t.rounds?.length ?? 0) + 1}
+                {t('tournament.round')} {(tournament.rounds?.length ?? 0) + 1}
               </Text>
               <Pressable
                 onPress={() => {
@@ -310,12 +311,12 @@ export default function TournamentDetail() {
                 }}
                 hitSlop={10}
               >
-                <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>LIMPAR</Text>
+                <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>{t('common.clear')}</Text>
               </Pressable>
             </View>
 
             {/* Opponent leader + BYE */}
-            <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Líder do oponente</Text>
+            <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>{t('tournament.opponentLeader')}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ position: 'relative', flex: 1 }}>
                 <TextInput
@@ -327,7 +328,7 @@ export default function TournamentDetail() {
                     setShowOppList(true);
                   }}
                   onFocus={() => !isBye && setShowOppList(true)}
-                  placeholder="Ex.: Roronoa Zoro (OP12)"
+                  placeholder={t('tournament.opponentPlaceholder')}
                   placeholderTextColor={PLACEHOLDER}
                   style={{
                     borderWidth: 1,
@@ -418,20 +419,20 @@ export default function TournamentDetail() {
             </View>
 
             {/* Dado */}
-            <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Dado</Text>
+            <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>{t('tournament.dice')}</Text>
             <Segmented
               value={dice === 'none' ? null : dice}
               onChange={(k) => setDice((k as Dice) || 'none')}
               options={[
-                { key: 'won', label: 'VENCI' },
-                { key: 'lost', label: 'PERDI' },
+                { key: 'won', label: t('tournament.diceWon') },
+                { key: 'lost', label: t('tournament.diceLost') },
               ]}
               disabled={isBye}
             />
 
             {/* Ordem */}
             <View style={{ marginTop: 14 }}>
-              <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Ordem</Text>
+              <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>{t('tournament.order')}</Text>
               <Segmented
                 value={order ?? null}
                 onChange={(k) => setOrder(k as Order)}
@@ -445,13 +446,13 @@ export default function TournamentDetail() {
 
             {/* Resultado */}
             <View style={{ marginTop: 14 }}>
-              <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>Resultado</Text>
+              <Text style={{ marginBottom: 6, fontFamily: 'NotoSans_700Bold' }}>{t('tournament.resultLabel')}</Text>
               <Segmented
                 value={result ?? null}
                 onChange={(k) => setResult(k as Result)}
                 options={[
-                  { key: 'win', label: 'VENCI' },
-                  { key: 'loss', label: 'PERDI' },
+                  { key: 'win', label: t('tournament.resultWon') },
+                  { key: 'loss', label: t('tournament.resultLost') },
                 ]}
                 disabled={isBye}
               />
@@ -472,7 +473,7 @@ export default function TournamentDetail() {
                 }}
               >
                 <Text style={{ color: '#fff', fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-                  ADICIONAR ROUND
+                  {t('tournament.addRound')}
                 </Text>
               </Pressable>
             </View>
@@ -492,17 +493,17 @@ export default function TournamentDetail() {
               paddingHorizontal: 12,
             }}
           >
-            <Text style={{ width: 56, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>Round</Text>
-            <Text style={{ flex: 1, fontFamily: 'NotoSans_700Bold' }}>Opponent</Text>
-            <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>Dice</Text>
-            <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>Order</Text>
-            <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>Result</Text>
+            <Text style={{ width: 56, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>{t('tournament.tableRound')}</Text>
+            <Text style={{ flex: 1, fontFamily: 'NotoSans_700Bold' }}>{t('tournament.tableOpponent')}</Text>
+            <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>{t('tournament.tableDice')}</Text>
+            <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>{t('tournament.tableOrder')}</Text>
+            <Text style={{ width: 64, textAlign: 'center', fontFamily: 'NotoSans_700Bold' }}>{t('tournament.tableResult')}</Text>
           </View>
 
-          {(t.rounds ?? []).length === 0 ? (
-            <Text style={{ paddingVertical: 12, color: SUB, fontFamily: 'NotoSans_700Bold' }}>Sem rodadas ainda.</Text>
+          {(tournament.rounds ?? []).length === 0 ? (
+            <Text style={{ paddingVertical: 12, color: SUB, fontFamily: 'NotoSans_700Bold' }}>{t('tournament.noRounds')}</Text>
           ) : (
-            (t.rounds ?? []).map((r) => <RowItem key={r.id} r={r} />)
+            (tournament.rounds ?? []).map((r) => <RowItem key={r.id} r={r} />)
           )}
         </View>
       </ScrollView>
@@ -524,32 +525,32 @@ export default function TournamentDetail() {
             }}
           >
             <Text style={{ color: BRAND, fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-              VOLTAR
+              {t('common.back')}
             </Text>
           </Pressable>
 
           <Pressable
             onPress={() => setFinishOpen(true)}
-            android_ripple={{ color: (t as any).finalized ? '#00000010' : '#ffffff22' }}
+            android_ripple={{ color: (tournament as any).finalized ? '#00000010' : '#ffffff22' }}
             style={{
               height: 48,
               borderRadius: 0,
-              backgroundColor: (t as any).finalized ? '#fff' : BRAND,
-              borderWidth: (t as any).finalized ? 1 : 0,
-              borderColor: (t as any).finalized ? BRAND : 'transparent',
+              backgroundColor: (tournament as any).finalized ? '#fff' : BRAND,
+              borderWidth: (tournament as any).finalized ? 1 : 0,
+              borderColor: (tournament as any).finalized ? BRAND : 'transparent',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
             <Text
               style={{
-                color: (t as any).finalized ? BRAND : '#fff',
+                color: (tournament as any).finalized ? BRAND : '#fff',
                 fontSize: 14,
                 letterSpacing: 1,
                 fontFamily: 'NotoSans_700Bold',
               }}
             >
-              {(t as any).finalized ? 'REABRIR TORNEIO' : 'FINALIZAR TORNEIO'}
+              {(tournament as any).finalized ? t('tournament.reopenTournament') : t('tournament.finishTournament')}
             </Text>
           </Pressable>
         </View>
@@ -561,15 +562,15 @@ export default function TournamentDetail() {
           <View style={{ width: '100%', maxWidth: 420, backgroundColor: '#fff', borderWidth: 1, borderColor: LINE }}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: LINE }}>
               <Text style={{ fontFamily: 'NotoSans_700Bold', fontSize: 16 }}>
-                {(t as any).finalized ? 'Reabrir torneio?' : 'Finalizar torneio?'}
+                {(tournament as any).finalized ? t('tournament.reopenTitle') : t('tournament.finishTitle')}
               </Text>
             </View>
 
             <View style={{ padding: 16 }}>
               <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-                {(t as any).finalized
-                  ? 'Ao reabrir, você poderá adicionar novos rounds novamente.'
-                  : 'Ao finalizar, não será possível adicionar novos rounds. Você pode reabrir depois se precisar.'}
+                {(tournament as any).finalized
+                  ? t('tournament.reopenMessage')
+                  : t('tournament.finishMessage')}
               </Text>
             </View>
 
@@ -579,13 +580,13 @@ export default function TournamentDetail() {
                 android_ripple={{ color: '#00000010' }}
                 style={{ flex: 1, height: 48, alignItems: 'center', justifyContent: 'center', borderTopWidth: 1, borderRightWidth: 1, borderColor: LINE }}
               >
-                <Text style={{ fontFamily: 'NotoSans_700Bold', color: SUB }}>CANCELAR</Text>
+                <Text style={{ fontFamily: 'NotoSans_700Bold', color: SUB }}>{t('common.cancel')}</Text>
               </Pressable>
 
               <Pressable
                 onPress={async () => {
-                  const next = await setTournamentFinalized(t.id, !(t as any).finalized);
-                  if (next) setT(next);
+                  const next = await setTournamentFinalized(tournament.id, !(tournament as any).finalized);
+                  if (next) setTournament(next);
                   setFinishOpen(false);
                 }}
                 android_ripple={{ color: '#00000010' }}
@@ -596,16 +597,16 @@ export default function TournamentDetail() {
                   justifyContent: 'center',
                   borderTopWidth: 1,
                   borderColor: LINE,
-                  backgroundColor: (t as any).finalized ? '#fff' : BRAND,
+                  backgroundColor: (tournament as any).finalized ? '#fff' : BRAND,
                 }}
               >
                 <Text
                   style={{
                     fontFamily: 'NotoSans_700Bold',
-                    color: (t as any).finalized ? BRAND : '#fff',
+                    color: (tournament as any).finalized ? BRAND : '#fff',
                   }}
                 >
-                  {(t as any).finalized ? 'REABRIR' : 'FINALIZAR'}
+                  {(tournament as any).finalized ? t('common.reopen') : t('common.finish')}
                 </Text>
               </Pressable>
             </View>

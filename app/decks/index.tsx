@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { Card, DeckAvatar, ScreenHeader, UI } from '../../components/ui';
 import { aggregateDecks, loadTournaments, wrPercent } from '../../state/app';
+import { t } from '../../i18n';
 
 // Fonts
 import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
@@ -30,7 +31,7 @@ export default function DecksList() {
   if (!oswaldLoaded || !notoLoaded) {
     return (
       <View style={{ flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>Carregando…</Text>
+        <Text style={{ fontFamily: 'NotoSans_700Bold' }}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -39,11 +40,11 @@ export default function DecksList() {
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* HEADER fixo */}
       <View style={{ paddingBottom: 0, paddingHorizontal: 16 }}>
-        <ScreenHeader title="Seus Decks" onBack={() => router.back()} brandColor={BRAND} />
+        <ScreenHeader title={t('deck.myDecks')} onBack={() => router.back()} brandColor={BRAND} />
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
-            {agg.length} deck(s)
+            {t('deck.decksCount', { count: agg.length })}
           </Text>
           {/* Linha fina como no detail */}
           <View style={{ height: 1, backgroundColor: LINE, position: 'absolute', left: 0, right: 0, bottom: 0 }} />
@@ -55,7 +56,7 @@ export default function DecksList() {
         {agg.length === 0 ? (
           <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
             <Text style={{ color: SUB, textAlign: 'left', fontFamily: 'NotoSans_700Bold' }}>
-              Ainda não há dados. Crie torneios na tela inicial.
+              {t('deck.noData')}
             </Text>
           </View>
         ) : (
@@ -89,7 +90,7 @@ export default function DecksList() {
                         {item.deck}
                       </Text>
                       <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold', marginTop: 2 }}>
-                        {item.tournaments} torneio(s) · {item.rounds} partida(s)
+                        {t('deck.tournamentsCount', { count: item.tournaments })} · {t('deck.roundsCount', { count: item.rounds })}
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
@@ -126,7 +127,7 @@ export default function DecksList() {
           }}
         >
           <Text style={{ color: BRAND, fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-            VOLTAR
+            {t('common.back')}
           </Text>
         </Pressable>
       </View>
