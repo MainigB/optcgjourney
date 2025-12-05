@@ -286,7 +286,7 @@ export default function DeckProfile() {
           }}
         >
           <Text style={{ color: BRAND, fontSize: 14, letterSpacing: 1, fontFamily: 'NotoSans_700Bold' }}>
-            VOLTAR
+            {t('common.back')}
           </Text>
         </Pressable>
       </View>
