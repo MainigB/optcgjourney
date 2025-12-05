@@ -86,6 +86,7 @@ export default function DeckMatchupsList() {
                         name: deckName,
                         opponent: item.opponent,
                         oppk: deckKey(item.opponent),
+                        oppkExact: deckKeyExact(item.opponent),
                         dek: deckKey(deckName),
                       },
                     })

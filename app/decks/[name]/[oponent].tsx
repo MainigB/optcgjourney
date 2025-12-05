@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Card, DeckAvatar, ScreenHeader, UI } from '../../../components/ui';
 import { DECKS } from '../../../data/decks';
-import { deckKey, loadTournaments, Tournament } from '../../../state/app';
+import { deckKey, deckKeyExact, loadTournaments, Tournament } from '../../../state/app';
 import { t } from '../../../i18n';
 
 import { NotoSans_700Bold, useFonts as useNoto } from '@expo-google-fonts/noto-sans';
@@ -102,7 +102,7 @@ function canonicalFromKey(k: string, fallback: string) {
 }
 
 export default function MatchupDetail() {
-  const params = useLocalSearchParams<{ name: string; opponent: string; oppk?: string; dek?: string }>();
+  const params = useLocalSearchParams<{ name: string; opponent: string; oppk?: string; oppkExact?: string; dek?: string }>();
   
   // Verificações de segurança
   if (!params.name) {
@@ -122,6 +122,7 @@ export default function MatchupDetail() {
   const opponentNameParam = params.opponent ? decodeURIComponent(params.opponent) : '';
   const meKeyParam  = params.dek  ? String(params.dek)  : deckKey(deckNameParam);
   const oppKeyParam = params.oppk ? String(params.oppk) : (opponentNameParam ? deckKey(opponentNameParam) : '');
+  const oppKeyExactParam = params.oppkExact ? String(params.oppkExact) : (opponentNameParam ? deckKeyExact(opponentNameParam) : '');
 
   const [all, setAll] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,7 +148,13 @@ export default function MatchupDetail() {
         
         for (const r of t.rounds) {
           if (!r || !r.opponentLeader) continue;
-          if (deckKey(r.opponentLeader || '') !== oppKeyParam) continue;
+          // Usa deckKeyExact se disponível para distinguir versões diferentes do mesmo líder
+          if (oppKeyExactParam) {
+            if (deckKeyExact(r.opponentLeader || '') !== oppKeyExactParam) continue;
+          } else {
+            // Fallback para deckKey se não tiver a chave exata
+            if (deckKey(r.opponentLeader || '') !== oppKeyParam) continue;
+          }
           out.push({
             id: r.id, num: r.num, result: r.result, order: r.order, dice: r.dice, opponentLeader: r.opponentLeader || '',
             tournamentId: t.id, tournamentName: t.name, tournamentDate: t.date
@@ -160,7 +167,7 @@ export default function MatchupDetail() {
       console.warn('Error in rounds useMemo:', error);
       return [];
     }
-  }, [all, meKeyParam, oppKeyParam]);
+  }, [all, meKeyParam, oppKeyParam, oppKeyExactParam]);
 
   /* Labels vindos dos dados + normalização para o rótulo canônico (bate imagem) */
   const myLabelFromData = useMemo(() => {
@@ -177,17 +184,47 @@ export default function MatchupDetail() {
   const oppLabelFromData = useMemo(() => {
     try {
       if (!rounds.length || !Array.isArray(rounds)) return opponentNameParam;
-      // se precisar, poderíamos decidir pelo mais frequente; primeiro round costuma bastar
-      return rounds[0]?.opponentLeader ?? opponentNameParam;
+      
+      // Conta a frequência de cada nome de oponente
+      const nameCounts = new Map<string, number>();
+      for (const r of rounds) {
+        const name = r.opponentLeader || '';
+        if (name) {
+          nameCounts.set(name, (nameCounts.get(name) || 0) + 1);
+        }
+      }
+      
+      // Retorna o nome mais frequente, ou o primeiro se não houver contagem
+      let mostFrequent = opponentNameParam;
+      let maxCount = 0;
+      for (const [name, count] of nameCounts.entries()) {
+        if (count > maxCount) {
+          maxCount = count;
+          mostFrequent = name;
+        }
+      }
+      
+      return mostFrequent || rounds[0]?.opponentLeader || opponentNameParam;
     } catch (error) {
       console.warn('Error in oppLabelFromData:', error);
       return opponentNameParam;
     }
   }, [rounds, opponentNameParam]);
 
-  // Rótulos canônicos (garante mapeamento de imagem correto e exibição consistente)
-  const myDisplay  = useMemo(() => canonicalFromKey(meKeyParam,  myLabelFromData),  [meKeyParam,  myLabelFromData]);
-  const oppDisplay = useMemo(() => canonicalFromKey(oppKeyParam, oppLabelFromData), [oppKeyParam, oppLabelFromData]);
+  // Rótulos canônicos - sempre usa o nome exato dos dados, nunca busca na lista para evitar confusão entre versões
+  const myDisplay = useMemo(() => {
+    // Prioriza o nome dos dados reais (garante versão correta)
+    if (myLabelFromData) return myLabelFromData;
+    // Senão, usa o nome dos parâmetros
+    return deckNameParam;
+  }, [myLabelFromData, deckNameParam]);
+  
+  const oppDisplay = useMemo(() => {
+    // Prioriza o nome dos dados reais (garante versão correta - OP07 vs OP13)
+    if (oppLabelFromData) return oppLabelFromData;
+    // Senão, usa o nome que veio nos parâmetros
+    return opponentNameParam || 'Unknown';
+  }, [oppLabelFromData, opponentNameParam]);
 
   const splits = useMemo(() => {
     try {
@@ -271,7 +308,7 @@ export default function MatchupDetail() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ paddingBottom: 0, paddingHorizontal: 16 }}>
-        <ScreenHeader title={opponentNameParam ? t('matchup.title', { deck: deckNameParam, opponent: opponentNameParam }) : t('matchup.titleSimple', { deck: deckNameParam })} onBack={() => router.back()} brandColor={BRAND} />
+        <ScreenHeader title={oppDisplay ? t('matchup.title', { deck: myDisplay, opponent: oppDisplay }) : t('matchup.titleSimple', { deck: myDisplay })} onBack={() => router.back()} brandColor={BRAND} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8 }}>
           <Text style={{ color: SUB, fontFamily: 'NotoSans_700Bold' }}>
             {t('matchup.matchesCount', { count: rounds.length })} · {splits.total.wr}% WR

@@ -50,7 +50,18 @@ export function wrPercent(wins: number, losses: number) {
   return Math.round((wins / total) * 100);
 }
 
-/** Chave exata p/ comparar rótulos sem “achatar” set/emoji (mantém OPxx/STxx e cores). */
+/** Converte emojis de cores para letras */
+function migrateEmojisToLetters(s: string): string {
+  return (s || '')
+    .replace(/🟢/g, 'G')
+    .replace(/🔵/g, 'U')
+    .replace(/🟣/g, 'P')
+    .replace(/⚫/g, 'B')
+    .replace(/🔴/g, 'R')
+    .replace(/🟡/g, 'Y');
+}
+
+/** Chave exata p/ comparar rótulos sem "achatar" set/emoji (mantém OPxx/STxx e cores). */
 export function deckKeyExact(s: string) {
   return (s || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
@@ -134,12 +145,30 @@ export async function loadTournaments(): Promise<Tournament[]> {
     if (v2) {
       const parsed = (deserializeCompressed(v2) as Tournament[] | null) || [];
       const migrated = parsed.map((t, i) => {
-        const rounds = (t.rounds ?? []).map(sanitizeRound);
+        const rounds = (t.rounds ?? []).map((r, idx) => {
+          const sanitized = sanitizeRound(r, idx);
+          return {
+            ...sanitized,
+            opponentLeader: sanitized.opponentLeader ? migrateEmojisToLetters(sanitized.opponentLeader) : sanitized.opponentLeader,
+          };
+        });
         const rec = computeRecord({ ...t, rounds });
+        const deckName = migrateEmojisToLetters((t.deck || '').trim());
+        
+        // Verifica se precisa migrar
+        const needsMigration = (t.deck || '').includes('🟢') || (t.deck || '').includes('🔵') || 
+                               (t.deck || '').includes('🟣') || (t.deck || '').includes('⚫') || 
+                               (t.deck || '').includes('🔴') || (t.deck || '').includes('🟡') ||
+                               rounds.some(r => r.opponentLeader && (
+                                 r.opponentLeader.includes('🟢') || r.opponentLeader.includes('🔵') ||
+                                 r.opponentLeader.includes('🟣') || r.opponentLeader.includes('⚫') ||
+                                 r.opponentLeader.includes('🔴') || r.opponentLeader.includes('🟡')
+                               ));
+        
         return {
           id: t.id || `${i}-${Date.now()}`,
           name: (t.name || '').trim(),
-          deck: (t.deck || '').trim(),
+          deck: deckName,
           date: t.date ?? Date.now(),
           set: t.set?.trim() || undefined,
           type: t.type?.trim() || undefined,
@@ -149,6 +178,22 @@ export async function loadTournaments(): Promise<Tournament[]> {
           finalized: Boolean((t as any).finalized) || false,
         } as Tournament;
       });
+      
+      // Verifica se houve migração e salva
+      const hadMigration = migrated.some(t => {
+        const original = parsed.find(orig => orig.id === t.id);
+        if (!original) return false;
+        return (original.deck || '').includes('🟢') || (original.deck || '').includes('🔵') || 
+               (original.deck || '').includes('🟣') || (original.deck || '').includes('⚫') || 
+               (original.deck || '').includes('🔴') || (original.deck || '').includes('🟡');
+      });
+      
+      if (hadMigration) {
+        try {
+          await AsyncStorage.setItem(K_TOURNAMENTS_V2, serializeCompressed(migrated));
+        } catch {}
+      }
+      
       return migrated;
     }
 
@@ -158,12 +203,18 @@ export async function loadTournaments(): Promise<Tournament[]> {
 
     // MIGRA / SANEIA rounds e recalcula placares
     const migrated = raw.map((t, i) => {
-      const rounds = (t.rounds ?? []).map(sanitizeRound);
+      const rounds = (t.rounds ?? []).map((r, idx) => {
+        const sanitized = sanitizeRound(r, idx);
+        return {
+          ...sanitized,
+          opponentLeader: sanitized.opponentLeader ? migrateEmojisToLetters(sanitized.opponentLeader) : sanitized.opponentLeader,
+        };
+      });
       const rec = computeRecord({ ...t, rounds });
       return {
         id: t.id || `${i}-${Date.now()}`,
         name: (t.name || '').trim(),
-        deck: (t.deck || '').trim(),
+        deck: migrateEmojisToLetters((t.deck || '').trim()),
         date: t.date ?? Date.now(),
         set: t.set?.trim() || undefined,
         type: t.type?.trim() || undefined,
@@ -222,53 +273,100 @@ export function computeRecord(t: Pick<Tournament, 'rounds' | 'wins' | 'losses'>)
 
 // ---------------- Agregações (Seus Decks) ----------------
 export function aggregateDecks(list: Tournament[]) {
-  type Agg = { deck: string; wins: number; losses: number; tournaments: number; rounds: number };
+  type Agg = { deck: string; wins: number; losses: number; tournaments: number; rounds: number; nameCounts: Map<string, number> };
   const map = new Map<string, Agg>();
   for (const t of list) {
     const rec = computeRecord(t);
-    const key = deckKey(t.deck);
-    const title = t.deck.trim();
-    const cur = map.get(key) ?? { deck: title, wins: 0, losses: 0, tournaments: 0, rounds: 0 };
+    const deckName = t.deck.trim();
+    const key = deckKeyExact(deckName); // Usa deckKeyExact para distinguir versões diferentes
+    if (!key) continue;
+    
+    if (!map.has(key)) {
+      const nameCounts = new Map<string, number>();
+      map.set(key, { deck: deckName, wins: 0, losses: 0, tournaments: 0, rounds: 0, nameCounts });
+    }
+    const cur = map.get(key)!;
     cur.wins += rec.wins;
     cur.losses += rec.losses;
     cur.tournaments += 1;
     cur.rounds += (t.rounds?.length ?? rec.wins + rec.losses);
-    cur.deck = title; // mantém rótulo “bonito”
-    map.set(key, cur);
+    
+    // Conta a frequência de cada nome exato para este deck
+    const currentCount = cur.nameCounts.get(deckName) || 0;
+    cur.nameCounts.set(deckName, currentCount + 1);
   }
-  return Array.from(map.values()).sort((a, b) => b.wins - a.wins);
+  
+  // Para cada deck, pega o nome mais frequente para garantir consistência
+  const arr = Array.from(map.values()).map(agg => {
+    let mostFrequent = agg.deck;
+    let maxCount = 0;
+    for (const [name, count] of agg.nameCounts.entries()) {
+      if (count > maxCount) {
+        maxCount = count;
+        mostFrequent = name;
+      }
+    }
+    return { deck: mostFrequent, wins: agg.wins, losses: agg.losses, tournaments: agg.tournaments, rounds: agg.rounds };
+  });
+  
+  return arr.sort((a, b) => b.wins - a.wins);
 }
 
 export function deckStats(list: Tournament[], deck: string) {
-  const key = deckKey(deck);
-  const agg = aggregateDecks(list).find(d => deckKey(d.deck) === key)
+  const deckTrimmed = deck.trim();
+  // Busca usando comparação direta (como na tela de detalhes)
+  const agg = aggregateDecks(list).find(d => d.deck.trim() === deckTrimmed)
     ?? { deck, wins: 0, losses: 0, tournaments: 0, rounds: 0 };
   return { ...agg, wr: wrPercent(agg.wins, agg.losses) };
 }
 
 // ---------------- Matchups por deck adversário ----------------
 export function matchupsForDeck(list: Tournament[], myDeck: string) {
-  const me = deckKey(myDeck);
-  type MU = { opponent: string; wins: number; losses: number; rounds: number };
+  const myDeckTrimmed = myDeck.trim();
+  type MU = { opponent: string; wins: number; losses: number; rounds: number; nameCounts: Map<string, number> };
   const map = new Map<string, MU>();
 
   for (const t of list) {
-    if (deckKey(t.deck) !== me) continue;
+    // Compara diretamente o nome do deck (como na tela de detalhes)
+    if (t.deck.trim() !== myDeckTrimmed) continue;
     for (const r of t.rounds ?? []) {
       if (r.isBye) continue; // BYE não entra em matchups
       const label = (r.opponentLeader || '').trim();
       const k = deckKeyExact(label);          // <<---- CHAVE EXATA AQUI
       if (!k) continue;
 
-      const cur = map.get(k) ?? { opponent: label, wins: 0, losses: 0, rounds: 0 };
+      if (!map.has(k)) {
+        // Cria novo matchup com contador de nomes
+        const nameCounts = new Map<string, number>();
+        map.set(k, { opponent: '', wins: 0, losses: 0, rounds: 0, nameCounts });
+      }
+      const cur = map.get(k)!;
       if (r.result === 'win') cur.wins++; else cur.losses++;
       cur.rounds++;
-      cur.opponent = label; // preserva o último rótulo “bonito”
-      map.set(k, cur);
+      
+      // Conta a frequência de cada nome exato para este matchup
+      const currentCount = cur.nameCounts.get(label) || 0;
+      cur.nameCounts.set(label, currentCount + 1);
     }
   }
 
-  const arr = Array.from(map.values()).map(mu => ({ ...mu, wr: wrPercent(mu.wins, mu.losses) }));
+  // Para cada matchup, pega o nome mais frequente
+  const arr = Array.from(map.values()).map(mu => {
+    let mostFrequent = '';
+    let maxCount = 0;
+    for (const [name, count] of mu.nameCounts.entries()) {
+      if (count > maxCount) {
+        maxCount = count;
+        mostFrequent = name;
+      }
+    }
+    // Garante que sempre há um nome válido (pega o primeiro se não houver contagem)
+    if (!mostFrequent && mu.nameCounts.size > 0) {
+      mostFrequent = Array.from(mu.nameCounts.keys())[0];
+    }
+    return { opponent: mostFrequent, wins: mu.wins, losses: mu.losses, rounds: mu.rounds, wr: wrPercent(mu.wins, mu.losses) };
+  });
+  
   arr.sort((a, b) => (b.rounds - a.rounds) || (b.wr - a.wr));
   return arr;
 }
@@ -279,12 +377,13 @@ type Split = { wins: number; losses: number; rounds: number; wr: number };
 const pack = (w: number, l: number): Split => ({ wins: w, losses: l, rounds: w + l, wr: wrPercent(w, l) });
 
 export function deckSplits(list: Tournament[], myDeck: string) {
-  const me = deckKey(myDeck);
+  const myDeckTrimmed = myDeck.trim();
   let o1w = 0, o1l = 0, o2w = 0, o2l = 0;
   let wonW = 0, wonL = 0, lostW = 0, lostL = 0;
 
   for (const t of list) {
-    if (deckKey(t.deck) !== me) continue;
+    // Compara diretamente o nome do deck (como na tela de detalhes)
+    if (t.deck.trim() !== myDeckTrimmed) continue;
     for (const r of t.rounds ?? []) {
       if (r.isBye) continue; // BYE não entra em splits
       if (r.order === 'first') (r.result === 'win' ? o1w++ : o1l++);
@@ -305,7 +404,7 @@ export function deckSplits(list: Tournament[], myDeck: string) {
 
 // ---------------- Splits específicos do matchup (inclui MATRIZ) ----------------
 export function matchupSplitsForDeck(list: Tournament[], myDeck: string, opponentDeck: string) {
-  const me = deckKey(myDeck);
+  const myDeckTrimmed = myDeck.trim();
   const oppExact = deckKeyExact(opponentDeck);
 
   let w = 0, l = 0;
@@ -315,7 +414,8 @@ export function matchupSplitsForDeck(list: Tournament[], myDeck: string, opponen
   let sWonW = 0, sWonL = 0, sLostW = 0, sLostL = 0;
 
   for (const t of list) {
-    if (deckKey(t.deck) !== me) continue;
+    // Compara diretamente o nome do deck (como na tela de detalhes)
+    if (t.deck.trim() !== myDeckTrimmed) continue;
     for (const r of t.rounds ?? []) {
       if (r.isBye) continue; // BYE não entra em splits por matchup
       const ropp = deckKeyExact(r.opponentLeader || '');

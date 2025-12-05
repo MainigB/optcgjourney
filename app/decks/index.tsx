@@ -3,7 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { Card, DeckAvatar, ScreenHeader, UI } from '../../components/ui';
-import { aggregateDecks, loadTournaments, wrPercent } from '../../state/app';
+import { aggregateDecks, deckKeyExact, loadTournaments, wrPercent } from '../../state/app';
 import { t } from '../../i18n';
 
 // Fonts
@@ -62,7 +62,7 @@ export default function DecksList() {
         ) : (
           <FlatList
             data={agg}
-            keyExtractor={(d) => d.deck}
+            keyExtractor={(d) => deckKeyExact(d.deck)}
             style={{ flex: 1 }}
             contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 }}
             renderItem={({ item }) => {
