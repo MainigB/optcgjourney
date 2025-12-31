@@ -18,6 +18,13 @@
     "myDecks": "MEUS DECKS",
     "viewTournaments": "VER TORNEIOS"
   },
+  "feedback": {
+    "title": "Avalie o App",
+    "message": "Gostou do OPTCG Journey? Sua avaliação na Play Store nos ajuda muito!",
+    "rateButton": "AVALIAR NA LOJA",
+    "laterButton": "MAIS TARDE",
+    "dontShowButton": "Não ver mais essa mensagem"
+  },
   "tournament": {
     "addTitle": "Adicionar torneio",
     "nameLabel": "Nome do torneio",

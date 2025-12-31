@@ -2,6 +2,7 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppLogo } from '../components/logo';
+import { FeedbackModal } from '../components/feedback-modal';
 import { UI } from '../components/ui';
 import { t } from '../i18n';
 
@@ -26,6 +27,7 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1, backgroundColor: UI.color.bg }}>
+      <FeedbackModal />
       {/* CONTEÚDO (título + lista) */}
       <View
         style={{

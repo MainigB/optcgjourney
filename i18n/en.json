@@ -18,6 +18,13 @@
     "myDecks": "MY DECKS",
     "viewTournaments": "VIEW TOURNAMENTS"
   },
+  "feedback": {
+    "title": "Rate the App",
+    "message": "Enjoying OPTCG Journey? Your rating on the Play Store helps us a lot!",
+    "rateButton": "RATE ON STORE",
+    "laterButton": "LATER",
+    "dontShowButton": "Don't show this message again"
+  },
   "tournament": {
     "addTitle": "Add tournament",
     "nameLabel": "Tournament name",
