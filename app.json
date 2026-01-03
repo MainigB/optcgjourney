@@ -2,7 +2,7 @@
   "expo": {
     "name": "OPTCG Journey",
     "slug": "optcg-tracker",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/op_tcg_icon_1024_ios.png",
     "scheme": "optcgtracker",
@@ -24,7 +24,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.ginithekid.optcgtracker",
-      "versionCode": 6,
+      "versionCode": 7,
       "playStoreUrl": "https://github.com/seu-usuario/optcgjourney/blob/main/docs/PRIVACY.md"
     },
     "privacy": "public",
